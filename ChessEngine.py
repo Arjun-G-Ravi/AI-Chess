@@ -15,3 +15,6 @@ class Engine:
 
     def run_engine(self, model, board):
         pass
+
+if __name__ == '__main__':
+    print("cow")
