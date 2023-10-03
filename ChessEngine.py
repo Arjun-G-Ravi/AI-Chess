@@ -44,20 +44,30 @@ class Engine:
         return encoding
     
     def encode_y(self,y):
-        pass
+        if '#+' in y:
+            y = float(+999)
+        elif '#-' in y:
+            y = float(-999)
+        elif '+' in y or y == '0':
+            y = float(y.replace('+',''))
+        elif '-' in y:
+            y = -float(y.replace('-',''))
+        else:
+            print("Some error in ds")
+        return float(y)   
+    
 
-    
-    
     def train_chess_engine(self, X, y):
         from sklearn.neural_network import MLPClassifier
         import joblib
 
-        model = MLPClassifier(solver='lbfgs', max_iter=1000, alpha=1e-4, hidden_layer_sizes=(70, 70, 70, 70), random_state=1)
+        model = MLPClassifier(solver='adam', max_iter=1000, alpha=1e-7, hidden_layer_sizes=(100,100,150,200,200,200,200,300,400,300,200,150,100,100,60,30))
         X_encoded = [self._encode_fen() for x in X]
-        # print((X_encoded,y))
-        model.fit(X_encoded,y)
+        y_encoded = [self.encode_y(i) for i in y]
+        print(X_encoded, y_encoded)
+        model.fit(X_encoded,y_encoded)
         joblib.dump(model, 'chess_engine.pkl')
-        print('Accuracy:',model.score(X_encoded,y)*100,'%')
+        print('Accuracy:',model.score(X_encoded,y_encoded)*100,'%')
 
 
     def run_engine(self, X):
@@ -73,24 +83,26 @@ class Engine:
 
 if __name__ == '__main__':
     # Lets do engine training here
-    
-    # Get dataset
+    # ----------------------------
     import pandas as pd
     import numpy as np
     import chess
+    
+    # Get dataset
     df = pd.read_csv('/home/arjun/Desktop/chessData.csv')
-    print(df.shape)
-
     test_df = df.iloc[:1000]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
 
-
+    # Initialisation
     board = chess.Board()
     engine = Engine(board)
+
+    # Training
     print("Training model...")
     engine.train_chess_engine(X, y)
 
+    # Inference
     input_fen =  'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
     print(engine.run_engine(input_fen))
 
