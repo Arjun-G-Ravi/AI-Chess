@@ -7,7 +7,7 @@ class Engine:
     def _get_fen(self):
         return self.board.fen()
 
-    def encode_fen(self):
+    def _encode_fen(self):
         # returns a vector with all encoded data of the board state. Now it is of length 70.
         encoding = []
         fen_val = self._get_fen()
@@ -41,19 +41,49 @@ class Engine:
             encoding.append('0')  # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
         else:
             encoding.append('1')
-
         return encoding
     
+    def encode_dataset(self):
+        # meh, I'll do it in __main__
+        pass
     
-    def train_chess_engine(self, encoded_fen):
-        pass
+    
+    def train_chess_engine(self, X, y):
+        from sklearn.neural_network import MLPClassifier
+        import joblib
 
-    def run_engine(self, model):
-        pass
+        model = MLPClassifier(solver='lbfgs', max_iter=10, alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1)
+        X_encoded = [self._encode_fen() for x in X]
+        print(X_encoded)
+        model.fit(X_encoded,y)
+        joblib.dump(model, 'chess_engine.pkl')
+
+
+    def run_engine(self, X):
+        import joblib
+        import numpy as np
+        model = joblib.load('chess_engine.pkl')
+        X_mod = np.array(X).reshape(-1,1)
+        return model.predict(X_mod)
+
 
 if __name__ == '__main__':
+    # Lets do engine training here
+    
+    # Get dataset
+    import pandas as pd
+    df = pd.read_csv('/home/arjun/Desktop/chessData.csv')
+    print(df.shape)
+
+    test_df = df.iloc[:10]
+    X = list(test_df.iloc[:,0])
+    y = list(test_df.iloc[:,1])
+
+
+    import chess
     board = chess.Board()
     engine = Engine(board)
-    print(engine.encode_fen())
+    engine.train_chess_engine(X, y)
+    print(engine.run_engine('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'))
 
     
