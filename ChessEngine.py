@@ -63,12 +63,11 @@ class Engine:
         import joblib
         import numpy as np
         model = joblib.load('chess_engine.pkl')
-        # new_board = chess.Board()
-        # encoding = self._encode_fen()
 
-        # X_mod = np.array(X).reshape(-1,1)._encode_fen() 
-        # print(encoding)
-        return model.predict([[9, 11, 10, 8, 7, 10, 11, 9, 12, 12, 12, 12, 12, 12, 12, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 3, 5, 4, 2, 1, 4, 5, 3, 1, 1, 1, 1, 1, 0]])
+        new_board = chess.Board()
+        encodings = Engine(new_board)._encode_fen()
+        # print(encodings)
+        return model.predict([encodings])
 
 
 if __name__ == '__main__':
@@ -88,7 +87,9 @@ if __name__ == '__main__':
     import chess
     board = chess.Board()
     engine = Engine(board)
+    print("Training model...")
     engine.train_chess_engine(X, y)
+
     print(engine.run_engine('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'))
 
     
