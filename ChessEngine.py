@@ -43,20 +43,21 @@ class Engine:
             encoding.append(1)
         return encoding
     
-    def encode_dataset(self):
-        # meh, I'll do it in __main__
+    def encode_y(self,y):
         pass
+
     
     
     def train_chess_engine(self, X, y):
         from sklearn.neural_network import MLPClassifier
         import joblib
 
-        model = MLPClassifier(solver='lbfgs', max_iter=10, alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1)
+        model = MLPClassifier(solver='lbfgs', max_iter=1000, alpha=1e-4, hidden_layer_sizes=(70, 70, 70, 70), random_state=1)
         X_encoded = [self._encode_fen() for x in X]
-        # print(X_encoded)
+        # print((X_encoded,y))
         model.fit(X_encoded,y)
         joblib.dump(model, 'chess_engine.pkl')
+        print('Accuracy:',model.score(X_encoded,y)*100,'%')
 
 
     def run_engine(self, X):
@@ -76,20 +77,21 @@ if __name__ == '__main__':
     # Get dataset
     import pandas as pd
     import numpy as np
+    import chess
     df = pd.read_csv('/home/arjun/Desktop/chessData.csv')
     print(df.shape)
 
-    test_df = df.iloc[:10]
+    test_df = df.iloc[:1000]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
 
 
-    import chess
     board = chess.Board()
     engine = Engine(board)
     print("Training model...")
     engine.train_chess_engine(X, y)
 
-    print(engine.run_engine('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'))
+    input_fen =  'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
+    print(engine.run_engine(input_fen))
 
     
