@@ -38,9 +38,9 @@ class Engine:
     
         # En-passant oppurtunity
         if fen_list[3] == '-':
-            encoding.append('0')  # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
+            encoding.append(0)  # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
         else:
-            encoding.append('1')
+            encoding.append(1)
         return encoding
     
     def encode_dataset(self):
@@ -54,7 +54,7 @@ class Engine:
 
         model = MLPClassifier(solver='lbfgs', max_iter=10, alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1)
         X_encoded = [self._encode_fen() for x in X]
-        print(X_encoded)
+        # print(X_encoded)
         model.fit(X_encoded,y)
         joblib.dump(model, 'chess_engine.pkl')
 
@@ -63,8 +63,12 @@ class Engine:
         import joblib
         import numpy as np
         model = joblib.load('chess_engine.pkl')
-        X_mod = np.array(X).reshape(-1,1)
-        return model.predict(X_mod)
+        # new_board = chess.Board()
+        # encoding = self._encode_fen()
+
+        # X_mod = np.array(X).reshape(-1,1)._encode_fen() 
+        # print(encoding)
+        return model.predict([[9, 11, 10, 8, 7, 10, 11, 9, 12, 12, 12, 12, 12, 12, 12, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 3, 5, 4, 2, 1, 4, 5, 3, 1, 1, 1, 1, 1, 0]])
 
 
 if __name__ == '__main__':
@@ -72,12 +76,13 @@ if __name__ == '__main__':
     
     # Get dataset
     import pandas as pd
+    import numpy as np
     df = pd.read_csv('/home/arjun/Desktop/chessData.csv')
     print(df.shape)
 
     test_df = df.iloc[:10]
-    X = list(test_df.iloc[:,0])
-    y = list(test_df.iloc[:,1])
+    X = np.array(test_df.iloc[:,0])
+    y = np.array(test_df.iloc[:,1])
 
 
     import chess
