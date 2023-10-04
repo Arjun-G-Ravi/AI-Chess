@@ -34,7 +34,7 @@ class Engine:
             if c in fen_list[2]:
                 encoding.append(1.)
             else:
-                encoding.append(2.)
+                encoding.append(0.)
     
         # En-passant oppurtunity
         if fen_list[3] == '-':
@@ -53,47 +53,45 @@ class Engine:
         elif '-' in y:
             y = -float(y.replace('-',''))
         else:
-            print("Some error in ds")
-
-        # normalise y
-        
-
+            print("Some error in ds"*100)
         return float(y)
     
+    def _normalise(self,inp):
+        inp_mean = np.mean(inp)
+        inp_std = np.std(inp)
+        inp_norm = [(i - inp_mean) / inp_std for i in inp]
+        return inp_norm
+
 
     def train_chess_engine(self, X, y):
         from sklearn.neural_network import MLPRegressor
         import joblib
 
-        model = MLPRegressor(solver='adam', max_iter=30000, learning_rate_init=1e-4, alpha=1e-7, hidden_layer_sizes=(256,512,1024,1024,256,256))
+        model = MLPRegressor(solver='adam', max_iter=3000, hidden_layer_sizes=(256,256))
+
+        # Encoding
         X_encoded = [self._encode_fen() for x in X]
         y_encoded = [self.encode_y(i) for i in y]
 
         # Normalising
-        X_mean = np.mean(X_encoded)
-        X_std = np.std(X_encoded)
-        X_norm = [(i - X_mean) / X_std for i in X_encoded]
-        
-        y_mean = np.mean(y_encoded)
-        y_std = np.std(y_encoded)
-        y_norm = [(i - y_mean) / y_std for i in y_encoded]
-
-        # print([(i,j) for i,j in zip(X_norm, y_norm)])
+        X_norm = self._normalise(X_encoded)
+        y_norm = self._normalise(y_encoded)
 
         model.fit(X_norm,y_norm)
-        joblib.dump(model, 'chess_engine.pkl')
-        print('Score: ',model.score(X_norm,y_norm))
+        joblib.dump(model,'chess_engine.pkl')
+        print(f"{'-'*30}\nScore: {model.score(X_norm,y_norm)}\n{'-'*30}")
 
 
     def run_engine(self, X):
         import joblib
         import numpy as np
-        model = joblib.load('chess_engine.pkl')
 
+        model = joblib.load('chess_engine.pkl')
         new_board = chess.Board()
         encodings = Engine(new_board)._encode_fen()
-        # print(encodings)
-        return model.predict([encodings])
+        out = model.predict([encodings])
+        # I will de-normalise the output after correcting the accuracy of the model, which is 0 right now
+        return out
 
 
 if __name__ == '__main__':
@@ -104,9 +102,8 @@ if __name__ == '__main__':
     import chess
     
     # Get dataset
-    print("Loading dataset ...")
-    df = pd.read_csv('/home/arjun/Desktop/chessData.csv',nrows=1001)
-    test_df = df.iloc[:1000]
+    df = pd.read_csv('/home/arjun/Desktop/chessData.csv',nrows=5000)
+    test_df = df.iloc[:5000]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
 
