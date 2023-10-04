@@ -19,55 +19,70 @@ class Engine:
         for c in positions:
             if c.isdigit():
                 for i in range(int(c)):
-                    encoding.append(0)
+                    encoding.append(float(0))
             else:
-                encoding.append(piece_hash_map[c])
+                encoding.append(float(piece_hash_map[c]))
 
         # Whose move?
         if fen_list[1] == 'w':
-            encoding.append(1)
+            encoding.append(1.)
         else:
-            encoding.append(0)
+            encoding.append(0.)
         
         # Castling oppurtunity
         for c in ['K', 'Q', 'k', 'q']:
             if c in fen_list[2]:
-                encoding.append(1)
+                encoding.append(1.)
             else:
-                encoding.append(2)
+                encoding.append(2.)
     
         # En-passant oppurtunity
         if fen_list[3] == '-':
-            encoding.append(0)  # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
+            encoding.append(0.)  # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
         else:
-            encoding.append(1)
+            encoding.append(1.)
         return encoding
     
     def encode_y(self,y):
         if '#+' in y:
-            y = float(+999)
+            y = float(+9999)
         elif '#-' in y:
-            y = float(-999)
+            y = float(-9999)
         elif '+' in y or y == '0':
             y = float(y.replace('+',''))
         elif '-' in y:
             y = -float(y.replace('-',''))
         else:
             print("Some error in ds")
-        return float(y)   
+
+        # normalise y
+        
+
+        return float(y)
     
 
     def train_chess_engine(self, X, y):
-        from sklearn.neural_network import MLPClassifier
+        from sklearn.neural_network import MLPRegressor
         import joblib
 
-        model = MLPClassifier(solver='adam', max_iter=1000, alpha=1e-7, hidden_layer_sizes=(100,100,150,200,200,200,200,300,400,300,200,150,100,100,60,30))
+        model = MLPRegressor(solver='adam', max_iter=30000, learning_rate_init=1e-4, alpha=1e-7, hidden_layer_sizes=(256,512,1024,1024,256,256))
         X_encoded = [self._encode_fen() for x in X]
         y_encoded = [self.encode_y(i) for i in y]
-        print(X_encoded, y_encoded)
-        model.fit(X_encoded,y_encoded)
+
+        # Normalising
+        X_mean = np.mean(X_encoded)
+        X_std = np.std(X_encoded)
+        X_norm = [(i - X_mean) / X_std for i in X_encoded]
+        
+        y_mean = np.mean(y_encoded)
+        y_std = np.std(y_encoded)
+        y_norm = [(i - y_mean) / y_std for i in y_encoded]
+
+        # print([(i,j) for i,j in zip(X_norm, y_norm)])
+
+        model.fit(X_norm,y_norm)
         joblib.dump(model, 'chess_engine.pkl')
-        print('Accuracy:',model.score(X_encoded,y_encoded)*100,'%')
+        print('Score: ',model.score(X_norm,y_norm))
 
 
     def run_engine(self, X):
@@ -89,7 +104,8 @@ if __name__ == '__main__':
     import chess
     
     # Get dataset
-    df = pd.read_csv('/home/arjun/Desktop/chessData.csv')
+    print("Loading dataset ...")
+    df = pd.read_csv('/home/arjun/Desktop/chessData.csv',nrows=1001)
     test_df = df.iloc[:1000]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
@@ -103,7 +119,8 @@ if __name__ == '__main__':
     engine.train_chess_engine(X, y)
 
     # Inference
-    input_fen =  'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1'
+    input_fen = X[1]
+    print(X[1],y[1])
     print(engine.run_engine(input_fen))
 
     
