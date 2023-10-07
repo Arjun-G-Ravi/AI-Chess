@@ -1,6 +1,4 @@
 import chess
-# This is new os 2
-# This is latest branch
 
 class Engine:
     def __init__(self, board):

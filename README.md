@@ -10,3 +10,4 @@ This is a AI based Chess Game
 
 # CURRENT STAGE
     The primary phase of the game has been set. But the model is only giving out 8.7% accuracy over the dataset for a MLP implementation. :( 
+    I think the encoder is the problem.
