@@ -60,14 +60,16 @@ class Engine:
 
     def train_chess_engine(self, X, y):
         from sklearn.neural_network import MLPRegressor
+        import joblib
 
-        model = MLPRegressor(solver='adam', max_iter=10000, hidden_layer_sizes=(1000,1000,1000,1000), learning_rate_init=1e-4)
+        model = MLPRegressor(solver='adam', max_iter=10000, hidden_layer_sizes=(1000,1000,1000,1000,1000), learning_rate_init=1e-4)
 
         # Encoding
         X_encoded = np.array([self.encode_fen(x) for x in X])
         y_encoded = np.array([self.encode_y(i) for i in y])
 
         model.fit(X_encoded,y_encoded)
+        joblib.dump(model,'Model_saves/ChessModel.joblib' )
         self.model = model
         
     def mse(self, X, y):
@@ -81,10 +83,14 @@ class Engine:
         out = self.model.predict(X_encoded)
         return out
     
-    def accuracy(self, X, y):
+    def accuracy(self, X, y,type_=0):
+        type_chart = {1:'Training set\n', 2:'Validation set\n', 3:'Test set\n'} 
+        type_data ='' if not type_ else type_chart[type_]
+        
         X_encoded = np.array([self.encode_fen(x) for x in X])
         y_encoded = np.array([self.encode_y(i) for i in y])
-        print(f"{'-'*15}\nScore: {self.model.score(X_encoded,y_encoded):.3f}\nMSE  : {self.mse(X_encoded, y_encoded):.3f}\n{'-'*15}")
+        
+        print(f"""{'-'*15}\n{type_data}Score: {self.model.score(X_encoded,y_encoded):.3f}\nMSE  : {self.mse(X_encoded, y_encoded):.3f}\n{'-'*15}""")
 
 if __name__ == '__main__':
     # Lets do engine training here
@@ -92,24 +98,28 @@ if __name__ == '__main__':
     import numpy as np
     import chess
     from sklearn.model_selection import train_test_split
+    import joblib
 
     # Get dataset
     df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=10000)
     test_df = df.iloc[:100]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
-        
-
+    # dataset split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,random_state=1, shuffle=True)
+    
     # Initialisation
     board = chess.Board()
     engine = Engine(board)
 
     # Training
     print("Training model...")
-    engine.train_chess_engine(X, y)
+    engine.train_chess_engine(X_train, y_train)
     
-    # Accuracy
-    engine.accuracy(X,y)
+    # Loading previous model
+    engine.model = joblib.load('Model_saves/ChessModel.joblib')
 
-    # Inference
-    out = engine.run_engine(X)
+    # Accuracy
+    engine.accuracy(X_train,y_train,1)
+    engine.accuracy(X_test,y_test,3)
+
