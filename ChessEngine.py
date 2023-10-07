@@ -56,58 +56,49 @@ class Engine:
             y = -float(y.replace('-',''))
         else:
             raise Exception('y Encoding Error')
-        return float(y)
-    
-    def normalise(self, inp):
-        inp_mean = np.mean(inp)
-        inp_std = np.std(inp)
-        inp_norm = [(i - inp_mean) / inp_std for i in inp]
-        return inp_norm
-
+        return float(y/9999) # for normalising 
 
     def train_chess_engine(self, X, y):
         from sklearn.neural_network import MLPRegressor
 
-        model = MLPRegressor(solver='adam', max_iter=1000, hidden_layer_sizes=(512,512,512,512))
-        
-        X_fen = [self.get_fen(self.board) for x in X]
+        model = MLPRegressor(solver='adam', max_iter=10000, hidden_layer_sizes=(1000,1000,1000,1000), learning_rate_init=1e-4)
 
         # Encoding
-        X_encoded = np.array([self.encode_fen(x) for x in X_fen])
+        X_encoded = np.array([self.encode_fen(x) for x in X])
         y_encoded = np.array([self.encode_y(i) for i in y])
-
-        # Normalising
-        # X_norm = self._normalise(X_encoded)
-        # y_norm = self._normalise(y_encoded)
 
         model.fit(X_encoded,y_encoded)
         self.model = model
-        print(f"{'-'*30}\nScore: {model.score(X_encoded,y_encoded)}\n{'-'*30}")
         
-        # from sklearn.metrics import mean_squared_error
-        # y_pred = self.model.predict(X_encoded)
-        # print(y_pred)
-
-
-    def run_engine(self, X):
-        X_fen = [self.get_fen(self.board) for x in X]
-        X_encoded = np.array([self.encode_fen(x) for x in X_fen])
+    def mse(self, X, y):
+        from sklearn.metrics import mean_squared_error
+        y_pred =self.model.predict(X)
+        mse = mean_squared_error(y, y_pred)
+        return mse
+    
+    def run_engine(self, X):        
+        X_encoded = np.array([self.encode_fen(x) for x in X])
         out = self.model.predict(X_encoded)
-        # I will de-normalise the output after correcting the accuracy of the model, which is 0 right now
         return out
-
+    
+    def accuracy(self, X, y):
+        X_encoded = np.array([self.encode_fen(x) for x in X])
+        y_encoded = np.array([self.encode_y(i) for i in y])
+        print(f"{'-'*15}\nScore: {self.model.score(X_encoded,y_encoded):.3f}\nMSE  : {self.mse(X_encoded, y_encoded):.3f}\n{'-'*15}")
 
 if __name__ == '__main__':
     # Lets do engine training here
     import pandas as pd
     import numpy as np
     import chess
+    from sklearn.model_selection import train_test_split
 
     # Get dataset
-    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=5000)
-    test_df = df.iloc[:2]
+    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=10000)
+    test_df = df.iloc[:100]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
+        
 
     # Initialisation
     board = chess.Board()
@@ -116,7 +107,9 @@ if __name__ == '__main__':
     # Training
     print("Training model...")
     engine.train_chess_engine(X, y)
+    
+    # Accuracy
+    engine.accuracy(X,y)
 
     # Inference
     out = engine.run_engine(X)
-    print(out)
