@@ -1,6 +1,5 @@
 import chess
 import random
-import chessAI
 
 def get_legal_moves(generator_):
     l = []

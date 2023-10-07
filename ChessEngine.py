@@ -76,12 +76,12 @@ class Engine:
         y_encoded = [self.encode_y(i) for i in y]
 
         # Normalising
-        X_norm = self._normalise(X_encoded)
-        y_norm = self._normalise(y_encoded)
+        # X_norm = self._normalise(X_encoded)
+        # y_norm = self._normalise(y_encoded)
 
-        model.fit(X_norm,y_norm)
+        model.fit(X_encoded,y_encoded)
         joblib.dump(model,'chess_engine.pkl')
-        print(f"{'-'*30}\nScore: {model.score(X_norm,y_norm)}\n{'-'*30}")
+        print(f"{'-'*30}\nScore: {model.score(X_encoded,y_encoded)}\n{'-'*30}")
 
 
     def run_engine(self, X):
@@ -102,9 +102,10 @@ if __name__ == '__main__':
     import pandas as pd
     import numpy as np
     import chess
-    
+    from sklearn.metrics import mean_squared_error
+
     # Get dataset
-    df = pd.read_csv('/home/arjun/Desktop/chessData.csv',nrows=5000)
+    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=5000)
     test_df = df.iloc[:5000]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
@@ -118,8 +119,6 @@ if __name__ == '__main__':
     engine.train_chess_engine(X, y)
 
     # Inference
-    input_fen = X[1]
-    print(X[1],y[1])
-    print(engine.run_engine(input_fen))
+    print(X[1],y[1],engine.run_engine(X[1]).item())
 
     
