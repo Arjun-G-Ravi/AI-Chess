@@ -12,6 +12,7 @@ class Engine:
         # returns a vector with all encoded data of the board state. Now it is of length 70.
         encoding = []
         fen_list = fen_val.split(' ')
+        # print(fen_list)
 
         # Position part
         positions = fen_list[0].replace('/','')
@@ -43,7 +44,7 @@ class Engine:
         # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
         else:
             encoding.append(1.)
-        return encoding
+        return encoding#/12  # for normalising
     
     def encode_y(self, y):
         if '#+' in y:
@@ -56,7 +57,7 @@ class Engine:
             y = -float(y.replace('-',''))
         else:
             raise Exception('y Encoding Error')
-        return float(y/9999) # for normalising 
+        return float(y/9999)  # for normalising 
 
     def train_chess_engine(self, X, y):
         from sklearn.neural_network import MLPRegressor
@@ -78,9 +79,14 @@ class Engine:
         mse = mean_squared_error(y, y_pred)
         return mse
     
-    def run_engine(self, X):        
+    def run_engine(self, X):  
+        '''
+        input: list
+        output: float
+        '''
         X_encoded = np.array([self.encode_fen(x) for x in X])
         out = self.model.predict(X_encoded)
+        out = out*9999  # de-normalise
         return out
     
     def accuracy(self, X, y,type_=0):
@@ -102,24 +108,28 @@ if __name__ == '__main__':
 
     # Get dataset
     df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=10000)
-    test_df = df.iloc[:100]
+    test_df = df.iloc[:10000]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
     # dataset split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,random_state=1, shuffle=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
     
     # Initialisation
     board = chess.Board()
     engine = Engine(board)
 
     # Training
-    print("Training model...")
-    engine.train_chess_engine(X_train, y_train)
+    # print("Training model...")
+    # engine.train_chess_engine(X_train, y_train)
     
     # Loading previous model
-    engine.model = joblib.load('Model_saves/ChessModel.joblib')
+    engine.model = joblib.load('Model_saves/100KChess_64.joblib')
 
     # Accuracy
     engine.accuracy(X_train,y_train,1)
     engine.accuracy(X_test,y_test,3)
+    
+    # Inference
+    out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])
+    print(out)
 

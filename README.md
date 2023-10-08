@@ -10,4 +10,4 @@ This is a AI based Chess Game
  5. Beat Alphazero :)
 
 # CURRENT STAGE
-    The model is overfitting a bit. But it seems reasonably easy to make it fit better.
+The model is overfitting a bit. But it seems reasonably easy to make it fit better.
