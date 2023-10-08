@@ -1,7 +1,23 @@
-import chess
-import ChessEngine
+def encode_y(y):
+    if '#+' in y:
+        val = float(y.replace('#+',''))
+        y = float(9999 - 100*(val-1))
+    elif '#-' in y:
+        val = float(y.replace('#-',''))
+        y = float(-9999 + 100*(val-1))
+    elif '+' in y or y == '0':
+        y = float(y.replace('+',''))
+    elif '-' in y:
+        y = -float(y.replace('-',''))
+    else:
+        raise Exception('y Encoding Error')
+    return float(y/9999)  # for normalising 
 
-b = chess.Board()
-engine = ChessEngine.Engine(b)
-
-print(engine.run_engine(['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/QNBQKQQQ w KQkq - 0 0'],'Model_saves/100KChess_64.joblib'))
+out = encode_y('-1')
+print(out)
+out = encode_y('+8433')
+print(out)
+out = encode_y('#+10')
+print(out)
+out = encode_y('#-1')
+print(out)

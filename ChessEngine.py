@@ -1,5 +1,6 @@
 import chess
 import numpy as np
+
 class Engine:
     def __init__(self, board):
         self.board = board
@@ -42,15 +43,18 @@ class Engine:
         if fen_list[3] == '-':
             encoding.append(0.)  
         # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
+        
         else:
             encoding.append(1.)
-        return encoding#/12  # for normalising
+        return np.array(encoding)/12  # for normalising
     
     def encode_y(self, y):
         if '#+' in y:
-            y = float(+9999)
+            val = float(y.replace('#+',''))
+            y = float(9999 - 100*(val-1))
         elif '#-' in y:
-            y = float(-9999)
+            val = float(y.replace('#-',''))
+            y = float(-9999 + 100*(val-1))
         elif '+' in y or y == '0':
             y = float(y.replace('+',''))
         elif '-' in y:
@@ -63,7 +67,7 @@ class Engine:
         from sklearn.neural_network import MLPRegressor
         import joblib
 
-        model = MLPRegressor(solver='adam', max_iter=10000, hidden_layer_sizes=(1000,1000,1000,1000,1000), learning_rate_init=1e-4)
+        model = MLPRegressor(solver='adam', max_iter=10000, hidden_layer_sizes=(512,1024,1024,512), learning_rate_init=1e-3)
 
         # Encoding
         X_encoded = np.array([self.encode_fen(x) for x in X])
@@ -80,10 +84,8 @@ class Engine:
         return mse
     
     def run_engine(self, X, model=None):  
-        '''
-        input: list
-        output: float
-        '''
+        ''' input: list
+        output: float '''
         
         if model:
             import joblib
@@ -98,8 +100,7 @@ class Engine:
         type_data ='' if not type_ else type_chart[type_]
         
         X_encoded = np.array([self.encode_fen(x) for x in X])
-        y_encoded = np.array([self.encode_y(i) for i in y])
-        
+        y_encoded = np.array([self.encode_y(i) for i in y]) 
         print(f"""{'-'*15}\n{type_data}Score: {self.model.score(X_encoded,y_encoded):.3f}\nMSE  : {self.mse(X_encoded, y_encoded):.3f}\n{'-'*15}""")
 
 if __name__ == '__main__':
@@ -116,18 +117,18 @@ if __name__ == '__main__':
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
     # dataset split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=True)
     
     # Initialisation
     board = chess.Board()
     engine = Engine(board)
 
     # Training
-    # print("Training model...")
-    # engine.train_chess_engine(X_train, y_train)
+    print("Training model...")
+    engine.train_chess_engine(X_train, y_train)
     
     # Loading previous model
-    engine.model = joblib.load('Model_saves/100KChess_64.joblib')
+    # engine.model = joblib.load('Model_saves/100KChess_64.joblib')
 
     # Accuracy
     engine.accuracy(X_train,y_train,1)
@@ -136,4 +137,3 @@ if __name__ == '__main__':
     # Inference
     out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])
     print(out)
-

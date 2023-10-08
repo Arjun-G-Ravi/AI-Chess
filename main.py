@@ -1,6 +1,5 @@
 import chess
 import ChessEngine
-import random
 import numpy as np
 
 def get_legal_moves(generator_):
@@ -17,11 +16,11 @@ def choose_best_move(legal_moves, board, depth=2):
     for move in frontier:
         my_board = chess.Board(start_fen)
         my_board.push(move)
-        print(my_board)
+        # print(my_board)
         engine = ChessEngine.Engine(my_board)
         fen = my_board.fen()
         # print(fen)
-        eval = engine.run_engine([fen],'Model_saves/100KChess_64.joblib')
+        eval = engine.run_engine([fen],'Model_saves/ChessModel.joblib')
         if eval < best_move[1]:
             best_move = (move,eval)
     print('BEST MOVE:',best_move)
@@ -40,13 +39,14 @@ while True:
             board.push_san(move)
             players_move = 0
         except Exception:
-            print("Move is invalid")
+            print("Move is invalid! Try again.")
 
     if board.is_checkmate():
        print('Game over!\nYou Won!')
        break
+   
     if draw:
-        print("It is a draw")
+        print("It is a draw!")
         break
 
     legal_moves = get_legal_moves(board.legal_moves)    
@@ -60,5 +60,5 @@ while True:
        print('Game over!\nI Won!')
        break
     if draw:
-        print("It is a draw")
+        print("It is a draw!")
         break
