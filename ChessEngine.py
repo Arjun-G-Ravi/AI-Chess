@@ -1,5 +1,5 @@
 import chess
-
+import numpy as np
 class Engine:
     def __init__(self, board):
         self.board = board
@@ -79,11 +79,15 @@ class Engine:
         mse = mean_squared_error(y, y_pred)
         return mse
     
-    def run_engine(self, X):  
+    def run_engine(self, X, model=None):  
         '''
         input: list
         output: float
         '''
+        
+        if model:
+            import joblib
+            self.model = joblib.load(model)  
         X_encoded = np.array([self.encode_fen(x) for x in X])
         out = self.model.predict(X_encoded)
         out = out*9999  # de-normalise
