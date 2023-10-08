@@ -21,3 +21,6 @@ out = encode_y('#+10')
 print(out)
 out = encode_y('#-1')
 print(out)
+
+import sklearn
+print('Scikit-learn version:', sklearn.__version__)

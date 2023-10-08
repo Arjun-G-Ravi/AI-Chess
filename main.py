@@ -20,7 +20,7 @@ def choose_best_move(legal_moves, board, depth=2):
         engine = ChessEngine.Engine(my_board)
         fen = my_board.fen()
         # print(fen)
-        eval = engine.run_engine([fen],'Model_saves/ChessModel.joblib')
+        eval = engine.run_engine([fen],'Model_saves/Chess100kModel.joblib')
         if eval < best_move[1]:
             best_move = (move,eval)
     print('BEST MOVE:',best_move)
