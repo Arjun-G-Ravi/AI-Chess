@@ -1,5 +1,8 @@
 import chess
 import numpy as np
+import torch
+import torchvision
+from torch.utils.data import Dataset, DataLoader
 
 class Engine:
     def __init__(self, board):
@@ -64,19 +67,30 @@ class Engine:
         return float(y/9999)  # for normalising 
 
     def train_chess_engine(self, X, y):
-        from sklearn.neural_network import MLPRegressor
-        import joblib
-
-        model = MLPRegressor(solver='adam', max_iter=10000, hidden_layer_sizes=(512,1024,1024,512), learning_rate_init=1e-3)
-
-        # Encoding
-        X_encoded = np.array([self.encode_fen(x) for x in X])
-        y_encoded = np.array([self.encode_y(i) for i in y])
-
-        model.fit(X_encoded,y_encoded)
-        joblib.dump(model,'Model_saves/ChessModel.joblib' )
-        self.model = model
+        import torch
+        import torch.nn as nn
+        import torchvision
+        import torchvision.transforms as transforms
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f'The device to be used for training: {device}')
+        print(len(X), len(y))
         
+        class ChessDataSet(Dataset):
+            def __init__(self):
+                
+                self.x = X
+                self.y = y
+                self.m, self.n = .shape
+
+            def __getitem__(self,indexVal):
+                return self.x[indexVal], self.y[indexVal]
+            
+            def __len__(self):
+                return self.m
+
+        
+        
+                
     def mse(self, X, y):
         from sklearn.metrics import mean_squared_error
         y_pred =self.model.predict(X)
@@ -124,9 +138,9 @@ if __name__ == '__main__':
     engine = Engine(board)
 
     # # Training
-    # print("Training model...")
-    # engine.train_chess_engine(X_train, y_train)
-    
+    print("Training model...")
+    engine.train_chess_engine(X_train, y_train)
+    exit()  
     # Loading previous model
     engine.model = joblib.load('Model_saves/Chess100kModel.joblib')
 
