@@ -110,8 +110,8 @@ if __name__ == '__main__':
     import chess
     from sklearn.model_selection import train_test_split
     import joblib
-
-    # Get dataset
+ 
+    # # Get dataset
     df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=10000)
     test_df = df.iloc[:10000]
     X = np.array(test_df.iloc[:,0])
@@ -119,16 +119,16 @@ if __name__ == '__main__':
     # dataset split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=True)
     
-    # Initialisation
+    # # Initialisation
     board = chess.Board()
     engine = Engine(board)
 
-    # Training
-    print("Training model...")
-    engine.train_chess_engine(X_train, y_train)
+    # # Training
+    # print("Training model...")
+    # engine.train_chess_engine(X_train, y_train)
     
     # Loading previous model
-    # engine.model = joblib.load('Model_saves/100KChess_64.joblib')
+    engine.model = joblib.load('Model_saves/Chess100kModel.joblib')
 
     # Accuracy
     engine.accuracy(X_train,y_train,1)
