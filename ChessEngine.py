@@ -8,8 +8,8 @@ import joblib
 
 class ChessDataSet(Dataset):
     def __init__(self, X, y):
-        self.x = torch.tensor(X, dtype=torch.float32)
-        self.y = torch.tensor(y, dtype=torch.float32)
+        self.x = X.clone()
+        self.y = y.clone()
         
     def __getitem__(self, indexVal):
         return self.x[indexVal], self.y[indexVal]
@@ -22,7 +22,7 @@ class ChessDataSet(Dataset):
 
 
 class ChessNN(nn.Module):
-    def __init__(self, inp_size, hidden1, hidden2, hidden3, out_size):
+    def __init__(self, inp_size, hidden1, hidden2, hidden3, hidden4, out_size):
         super(ChessNN, self).__init__()
         self.lay1 = nn.Linear(inp_size, hidden1)
         self.lay2 = nn.ReLU()
@@ -30,7 +30,9 @@ class ChessNN(nn.Module):
         self.lay4 = nn.ReLU()
         self.lay5 = nn.Linear(hidden2, hidden3)
         self.lay6 = nn.ReLU()
-        self.lay7 = nn.Linear(hidden3, out_size)
+        self.lay7 = nn.Linear(hidden3, hidden4)
+        self.lay8 = nn.ReLU()
+        self.lay9 = nn.Linear(hidden4, out_size)
         
     def forward(self, x):
         out = self.lay1(x) 
@@ -39,7 +41,9 @@ class ChessNN(nn.Module):
         out = self.lay4(out)
         out = self.lay5(out)
         out = self.lay6(out)
-        out = self.lay7(out) # We don't apply sotmax the cross entropy loss will do that for us
+        out = self.lay7(out) 
+        out = self.lay8(out)
+        out = self.lay9(out) 
         return out
 
 
@@ -91,18 +95,22 @@ class Engine:
     
     
     def encode_y(self, y):
-        if '#+' in y:
-            val = float(y.replace('#+',''))
-            y = float(9999 - 100*(val-1))
-        elif '#-' in y:
-            val = float(y.replace('#-',''))
-            y = float(-9999 + 100*(val-1))
-        elif '+' in y or y == '0':
-            y = float(y.replace('+',''))
-        elif '-' in y:
-            y = -float(y.replace('-',''))
-        else:
-            raise Exception('y Encoding Error')
+        try:
+            if '#+' in y:
+                val = float(y.replace('#+',''))
+                y = float(9999 - 100*(val-1))
+            elif '#-' in y:
+                val = float(y.replace('#-',''))
+                y = float(-9999 + 100*(val-1))
+            elif '+' in y or y == '0':
+                y = float(y.replace('+',''))
+            elif '-' in y:
+                y = -float(y.replace('-',''))
+            else:
+                raise Exception('y Encoding Error')
+        except:
+            print('One wrong y value detected. Changed it to be 0.')
+            y = 0
         return float(y/9999)  # for normalising 
 
 
@@ -113,26 +121,28 @@ class Engine:
         X = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
         y = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
         ds = ChessDataSet(X, y)
-        dataloader = DataLoader(dataset=ds, batch_size=100000, shuffle=True, num_workers=4)
+        dataloader = DataLoader(dataset=ds, batch_size=4000, shuffle=True, num_workers=4)
         
-        model = ChessNN(70, 600, 800, 400, 1).to(device)
+        model = ChessNN(70, 1000, 1000, 700, 200, 1).to(device)
         lossCategory = nn.MSELoss()
         optimiser = torch.optim.Adam(model.parameters(), lr=lr)
         
-        print("Training...")
+        print("\nTraining...")
         t_start = time.time()
         for epoch in range(num_epoch):
             for _,(X, y) in enumerate(dataloader):     
                 X = X.to(device)
                 y = y.to(device).reshape(-1,1)
                 output = model(X).reshape(-1,1)
-                loss = lossCategory(output, y)                
+                # loss = lossCategory(output, y)  
+                loss = (((output - y)**2).mean()*9999)
                 loss.backward()
                 optimiser.step()
-                optimiser.zero_grad()                
+                optimiser.zero_grad()     
+                          
             print(f"Epoch:{epoch} => Loss:{loss}")    
         t_stop = time.time()
-        print(f'Total Time: {(t_stop-t_start):2f}')
+        print(f'Total Training Time: {(t_stop-t_start):.2f}s')
         return model
 
     def run_engine(self, X, device='cuda', model=None):
@@ -149,6 +159,8 @@ class Engine:
         error = ((y_pred - y)**2).mean()
         return (error*9999).item()
                
+               
+               
 if __name__ == '__main__':
     # Lets do engine training here
     import pandas as pd
@@ -158,8 +170,11 @@ if __name__ == '__main__':
     import joblib
  
     # # Get dataset
-    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=100000)
-    test_df = df.iloc[:100000]
+    n_rows = 100000
+    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv', nrows=n_rows)
+    
+    
+    test_df = df.iloc[:n_rows]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
     
@@ -170,21 +185,20 @@ if __name__ == '__main__':
     board = chess.Board()
     engine = Engine(board)
     
-    
-    engine.model = joblib.load('/home/arjun/Desktop/GitHub/AI-Chess/Model_saves/Pytorch_v1.joblib')
-    # print(engine.model)
-    # print('\n\n', type(engine.model))
-    # # Training
-    # engine.model = engine.train_chess_engine(X_train, y_train)
-    # print(engine.model)
-    # print('\n\n', type(engine.model))
+    # Loading pre-trained model
+    # engine.model = joblib.load('/home/arjun/Desktop/GitHub/AI-Chess/Model_saves/Pytorch_v1.joblib')
+
+    # Training
+    engine.model = engine.train_chess_engine(X_train, y_train)
+
     
     # Saving the trained model
-    # joblib.dump(engine.model,'Model_saves/Pytorch_v1.joblib' )
+    joblib.dump(engine.model,'Model_saves/Pytorch_v3.joblib' )
     
     # Accuracy 
     print("Train Error:", engine.mse(X_train,y_train))
     print("Test Error:", engine.mse(X_test, y_test))
     
     # Inference
-    out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', 'rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])
+    out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', 'rnbqkbnr/1ppp1ppp/p7/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 4', '2rr4/ppq2kpp/2n1pn2/8/2NP4/P2Q4/1P3PPP/4RRK1 w - - 0 17'])
+    print(out) # Equal, white has M#1, Black winning
