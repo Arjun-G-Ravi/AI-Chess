@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import time
-
+import joblib
 
 class ChessDataSet(Dataset):
     def __init__(self, X, y):
@@ -137,7 +137,7 @@ class Engine:
 
     def run_engine(self, X, device='cuda', model=None):
         if model:
-            self.model=model  
+            self.model = joblib.load(model) 
         X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32).to(device)
         out = self.model(X_encoded)
         out = out*9999  # de-normalise
@@ -169,12 +169,18 @@ if __name__ == '__main__':
     # Initialisation
     board = chess.Board()
     engine = Engine(board)
-
-    # Training
-    engine.model = engine.train_chess_engine(X_train, y_train)
+    
+    
+    engine.model = joblib.load('/home/arjun/Desktop/GitHub/AI-Chess/Model_saves/Pytorch_v1.joblib')
+    # print(engine.model)
+    # print('\n\n', type(engine.model))
+    # # Training
+    # engine.model = engine.train_chess_engine(X_train, y_train)
+    # print(engine.model)
+    # print('\n\n', type(engine.model))
     
     # Saving the trained model
-    joblib.dump(engine.model,'Model_saves/Pytorch_v1.joblib' )
+    # joblib.dump(engine.model,'Model_saves/Pytorch_v1.joblib' )
     
     # Accuracy 
     print("Train Error:", engine.mse(X_train,y_train))

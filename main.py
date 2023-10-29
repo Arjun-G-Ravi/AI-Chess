@@ -1,5 +1,6 @@
 import chess
 import ChessEngine
+from ChessEngine import ChessNN
 import numpy as np
 from copy import deepcopy
 
@@ -9,9 +10,9 @@ def get_legal_moves(generator_):
         l.append(i)
     return l
 
-def choose_best_move(legal_moves, board, depth=2):
+def choose_best_move(legal_moves, board):
     print("Thinking...")
-    best_move = ('', float('inf'))
+    best_move = ('', -float('inf'))
     start_fen = board.fen()
     frontier = legal_moves
     my_board = chess.Board(start_fen)
@@ -29,20 +30,19 @@ def choose_best_move(legal_moves, board, depth=2):
         this_board = deepcopy(my_board)
         for m in move:
             this_board.push(m)
-        print(this_board) # This is 2 moves into the future
+        # print(this_board) # This is 2 moves into the future
         
         engine = ChessEngine.Engine(this_board)
         fen = this_board.fen()
         eval = engine.run_engine([fen], model='/home/arjun/Desktop/GitHub/AI-Chess/Model_saves/Pytorch_v1.joblib')
-        # print(eval)
-        if eval < best_move[1]:
+        if eval > best_move[1]:
             best_move = (move,eval)
         ct += 1
         print(f'Progress: {ct}/ {tot}')
     print('BEST MOVE:',best_move)
     return best_move[0][0]
 
-# ----------------------------
+# --- main --- 
 
 board = chess.Board()
 draw = board.is_stalemate() or board.is_insufficient_material() or board.can_claim_threefold_repetition() or board.can_claim_fifty_moves()
@@ -55,7 +55,14 @@ while True:
             board.push_san(move)
             players_move = 0
         except Exception:
-            print("Move is invalid! Try again.")
+            if move == 'ls':
+                print('Possible moves are: \n')
+                legals = get_legal_moves(board.legal_moves)
+                for i in legals:
+                    print(board.san(i), end='\t')
+                
+            else:
+                print("Move is invalid! Try again.")
 
     if board.is_checkmate():
        print('Game over!\nYou Won!')
