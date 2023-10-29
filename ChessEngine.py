@@ -112,8 +112,9 @@ class Engine:
     def train_chess_engine(self, X, y, num_epoch = 3, lr = 1e-5 ):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # print(f'The device to be used for training: {device}')
-        X = torch.tensor([self.encode_fen(x) for x in X], dtype=torch.float32)
-        y = torch.tensor([self.encode_y(i) for i in y], dtype=torch.float32)
+        X = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
+        print(X.shape)
+        y = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
         ds = ChessDataSet(X, y)
         # print(ds)
         
@@ -127,35 +128,22 @@ class Engine:
         
         for epoch in range(num_epoch):
             for i,(X, y) in enumerate(dataloader):     
-                X = X.reshape(-1, ).to(device)
-                y = y.to(device)
+                X = X.to(device)
+                y = y.to(device).reshape(-1,1)
                 
-                output = model(X)
-                print("cow")
+                output = model(X).reshape(-1,1)
+            
                 loss = lossCategory(output, y)
+                print(loss)
                 
                 loss.backward()
                 optimiser.step()
                 optimiser.zero_grad()
-
-                exit()
-                
-                
+                               
                 
                 if i%100 == 0:
-                    print(f"Epoch:{epoch}  Step:{i}/45  Label:{np.array(y,dtype=np.int32)}")
-            print()
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+                    print(f"Epoch:{epoch}  Step:{i}/{2200} ")
+            
         
         
                 
