@@ -109,70 +109,45 @@ class Engine:
         return float(y/9999.)  # for normalising 
 
 
-    def train_chess_engine(self, X, y, num_epoch = 3, lr = 1e-5 ):
+    def train_chess_engine(self, X, y, num_epoch = 1, lr = 1e-5 ):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        # print(f'The device to be used for training: {device}')
+        print(device)
+        print(f'The device to be used for training: {device}')
         X = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
         print(X.shape)
         y = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
         ds = ChessDataSet(X, y)
-        # print(ds)
-        
         dataloader = DataLoader(dataset=ds, batch_size=4, shuffle=True, num_workers=0)
-
-        
         model = ChessNN(70, 100, 250, 100, 1). to(device)
-        
-        lossCategory = nn.CrossEntropyLoss()
+        lossCategory = nn.MSELoss()
         optimiser = torch.optim.Adam(model.parameters(), lr=lr)
         
+        print("Training...")
         for epoch in range(num_epoch):
             for i,(X, y) in enumerate(dataloader):     
                 X = X.to(device)
                 y = y.to(device).reshape(-1,1)
-                
                 output = model(X).reshape(-1,1)
-            
-                loss = lossCategory(output, y)
-                print(loss)
-                
+                loss = lossCategory(output, y)                
                 loss.backward()
                 optimiser.step()
-                optimiser.zero_grad()
-                               
-                
-                if i%100 == 0:
-                    print(f"Epoch:{epoch}  Step:{i}/{2200} ")
-            
-        
-        
-                
-    def mse(self, X, y):
-        from sklearn.metrics import mean_squared_error
-        y_pred =self.model.predict(X)
-        mse = mean_squared_error(y, y_pred)
-        return mse
-    
-    def run_engine(self, X, model=None):  
-        ''' input: list
-        output: float '''
-        
-        if model:
-            import joblib
-            self.model = joblib.load(model)  
-        X_encoded = np.array([self.encode_fen(x) for x in X])
-        out = self.model.predict(X_encoded)
+                optimiser.zero_grad()                
+            print(f"Epoch:{epoch} => Loss:{loss}")    
+        return model
+
+    def run_engine(self, X):  
+        X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32).to('cuda')
+        print(X_encoded.shape)
+        out = self.model(X_encoded)
         out = out*9999  # de-normalise
+        print(out)
         return out
     
-    def accuracy(self, X, y,type_=0):
-        type_chart = {1:'Training set\n', 2:'Validation set\n', 3:'Test set\n'} 
-        type_data ='' if not type_ else type_chart[type_]
+    def accuracy(self, X, y):
+        y_pred = self.run_engine(X)
+        print(y_pred.shape, y.shape)
         
-        X_encoded = np.array([self.encode_fen(x).float() for x in X])
-        y_encoded = np.array([self.encode_y(i).float() for i in y]) 
-        print(f"""{'-'*15}\n{type_data}Score: {self.model.score(X_encoded,y_encoded):.3f}\nMSE  : {self.mse(X_encoded, y_encoded):.3f}\n{'-'*15}""")
-
+        
 if __name__ == '__main__':
     # Lets do engine training here
     import pandas as pd
@@ -182,7 +157,7 @@ if __name__ == '__main__':
     import joblib
  
     # # Get dataset
-    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=10000)
+    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=1000)
     test_df = df.iloc[:10000]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
@@ -194,16 +169,15 @@ if __name__ == '__main__':
     engine = Engine(board)
 
     # # Training
-    print("Training model...")
-    engine.train_chess_engine(X_train, y_train)
+    engine.model = engine.train_chess_engine(X_train, y_train)
+    out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', 'rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])
+    engine.accuracy(X_train,y_train)
     exit()  
     # Loading previous model
     # engine.model = joblib.load('Model_saves/Chess100kModel.joblib')
 
     # Accuracy
-    engine.accuracy(X_train,y_train,1)
     engine.accuracy(X_test,y_test,3)
     
     # Inference
-    out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])
     print(out)
