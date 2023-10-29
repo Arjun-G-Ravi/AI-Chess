@@ -33,7 +33,7 @@ def choose_best_move(legal_moves, board, depth=2):
         
         engine = ChessEngine.Engine(this_board)
         fen = this_board.fen()
-        eval = engine.run_engine([fen])
+        eval = engine.run_engine([fen], model='/home/arjun/Desktop/GitHub/AI-Chess/Model_saves/Pytorch_v1.joblib')
         # print(eval)
         if eval < best_move[1]:
             best_move = (move,eval)

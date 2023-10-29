@@ -135,7 +135,9 @@ class Engine:
         print(f'Total Time: {(t_stop-t_start):2f}')
         return model
 
-    def run_engine(self, X, device='cuda'):  
+    def run_engine(self, X, device='cuda', model=None):
+        if model:
+            self.model=model  
         X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32).to(device)
         out = self.model(X_encoded)
         out = out*9999  # de-normalise
@@ -172,7 +174,7 @@ if __name__ == '__main__':
     engine.model = engine.train_chess_engine(X_train, y_train)
     
     # Saving the trained model
-    
+    joblib.dump(engine.model,'Model_saves/Pytorch_v1.joblib' )
     
     # Accuracy 
     print("Train Error:", engine.mse(X_train,y_train))
