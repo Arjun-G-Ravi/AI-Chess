@@ -5,6 +5,7 @@ import torchvision
 import torchvision.transforms as transforms
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+from sklearn.metrics import mean_squared_error
 
 
 class ChessDataSet(Dataset):
@@ -145,9 +146,13 @@ class Engine:
     
     def accuracy(self, X, y):
         y_pred = self.run_engine(X)
+        y = torch.tensor([self.encode_y(i) for i in y])
+        print(y)
         print(y_pred.shape, y.shape)
+        mse = mean_squared_error(y, y_pred)
+        return mse 
         
-        
+               
 if __name__ == '__main__':
     # Lets do engine training here
     import pandas as pd
@@ -171,7 +176,7 @@ if __name__ == '__main__':
     # # Training
     engine.model = engine.train_chess_engine(X_train, y_train)
     out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', 'rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])
-    engine.accuracy(X_train,y_train)
+    print(engine.accuracy(X_train,y_train))
     exit()  
     # Loading previous model
     # engine.model = joblib.load('Model_saves/Chess100kModel.joblib')
