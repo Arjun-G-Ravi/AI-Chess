@@ -1,11 +1,9 @@
 import chess
 import numpy as np
 import torch
-import torchvision
-import torchvision.transforms as transforms
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-from sklearn.metrics import mean_squared_error
+import time
 
 
 class ChessDataSet(Dataset):
@@ -26,7 +24,6 @@ class ChessDataSet(Dataset):
 class ChessNN(nn.Module):
     def __init__(self, inp_size, hidden1, hidden2, hidden3, out_size):
         super(ChessNN, self).__init__()
-        self.inp_size = inp_size
         self.lay1 = nn.Linear(inp_size, hidden1)
         self.lay2 = nn.ReLU()
         self.lay3 = nn.Linear(hidden1, hidden2)
@@ -36,7 +33,7 @@ class ChessNN(nn.Module):
         self.lay7 = nn.Linear(hidden3, out_size)
         
     def forward(self, x):
-        out = self.lay1(x) # maybe add float() here 
+        out = self.lay1(x) 
         out = self.lay2(out)
         out = self.lay3(out)
         out = self.lay4(out)
@@ -58,12 +55,11 @@ class Engine:
         # returns a vector with all encoded data of the board state. Now it is of length 70.
         encoding = []
         fen_list = fen_val.split(' ')
-        # print(fen_list)
 
         # Position part
+        # If this doesnt work, i'll try one hot encoding
         positions = fen_list[0].replace('/','')
         piece_hash_map = {'K':1, 'Q':2, 'R':3, 'B':4, 'N':5, 'P':6, 'k':7, 'q':8, 'r':9, 'b':10, 'n':11, 'p':12}
-        # if this doesnt work, i'll try one hot encoding
         for c in positions:
             if c.isdigit():
                 for _ in range(int(c)):
@@ -85,47 +81,48 @@ class Engine:
                 encoding.append(0.)
     
         # En-passant oppurtunity
+        # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
         if fen_list[3] == '-':
             encoding.append(0.)  
-        # Honestly, I have to write a better encoding to represent en-passant. I'll do it if this thing works
-        
         else:
             encoding.append(1.)
+            
         return np.array(encoding)/12.0  # for normalising
     
     
     def encode_y(self, y):
         if '#+' in y:
             val = float(y.replace('#+',''))
-            y = float(9999. - 100*(val-1))
+            y = float(9999 - 100*(val-1))
         elif '#-' in y:
             val = float(y.replace('#-',''))
-            y = float(-9999. + 100*(val-1))
+            y = float(-9999 + 100*(val-1))
         elif '+' in y or y == '0':
             y = float(y.replace('+',''))
         elif '-' in y:
             y = -float(y.replace('-',''))
         else:
             raise Exception('y Encoding Error')
-        return float(y/9999.)  # for normalising 
+        return float(y/9999)  # for normalising 
 
 
-    def train_chess_engine(self, X, y, num_epoch = 1, lr = 1e-5 ):
+    def train_chess_engine(self, X, y, num_epoch = 10, lr = 1e-7):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(device)
-        print(f'The device to be used for training: {device}')
+        print(f'The device to be used for training: {device}\n')
+        
         X = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
-        print(X.shape)
         y = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
         ds = ChessDataSet(X, y)
-        dataloader = DataLoader(dataset=ds, batch_size=4, shuffle=True, num_workers=0)
-        model = ChessNN(70, 100, 250, 100, 1). to(device)
+        dataloader = DataLoader(dataset=ds, batch_size=100000, shuffle=True, num_workers=4)
+        
+        model = ChessNN(70, 600, 800, 400, 1).to(device)
         lossCategory = nn.MSELoss()
         optimiser = torch.optim.Adam(model.parameters(), lr=lr)
         
         print("Training...")
+        t_start = time.time()
         for epoch in range(num_epoch):
-            for i,(X, y) in enumerate(dataloader):     
+            for _,(X, y) in enumerate(dataloader):     
                 X = X.to(device)
                 y = y.to(device).reshape(-1,1)
                 output = model(X).reshape(-1,1)
@@ -134,24 +131,21 @@ class Engine:
                 optimiser.step()
                 optimiser.zero_grad()                
             print(f"Epoch:{epoch} => Loss:{loss}")    
+        t_stop = time.time()
+        print(f'Total Time: {(t_stop-t_start):2f}')
         return model
 
-    def run_engine(self, X):  
-        X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32).to('cuda')
-        print(X_encoded.shape)
+    def run_engine(self, X, device='cuda'):  
+        X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32).to(device)
         out = self.model(X_encoded)
         out = out*9999  # de-normalise
-        print(out)
         return out
     
-    def accuracy(self, X, y):
-        y_pred = self.run_engine(X)
-        y = torch.tensor([self.encode_y(i) for i in y])
-        print(y)
-        print(y_pred.shape, y.shape)
-        mse = mean_squared_error(y, y_pred)
-        return mse 
-        
+    def mse(self, X, y, device='cuda'):
+        y_pred = (self.run_engine(X)/9999)
+        y = torch.tensor([self.encode_y(i) for i in y]).reshape(-1,1).to(device)
+        error = ((y_pred - y)**2).mean()
+        return (error*9999).item()
                
 if __name__ == '__main__':
     # Lets do engine training here
@@ -162,27 +156,27 @@ if __name__ == '__main__':
     import joblib
  
     # # Get dataset
-    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=1000)
-    test_df = df.iloc[:10000]
+    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=100000)
+    test_df = df.iloc[:100000]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
+    
     # dataset split
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=True)
     
-    # # Initialisation
+    # Initialisation
     board = chess.Board()
     engine = Engine(board)
 
-    # # Training
+    # Training
     engine.model = engine.train_chess_engine(X_train, y_train)
-    out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', 'rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])
-    print(engine.accuracy(X_train,y_train))
-    exit()  
-    # Loading previous model
-    # engine.model = joblib.load('Model_saves/Chess100kModel.joblib')
-
-    # Accuracy
-    engine.accuracy(X_test,y_test,3)
+    
+    # Saving the trained model
+    
+    
+    # Accuracy 
+    print("Train Error:", engine.mse(X_train,y_train))
+    print("Test Error:", engine.mse(X_test, y_test))
     
     # Inference
-    print(out)
+    out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', 'rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])

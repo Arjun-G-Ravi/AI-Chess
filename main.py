@@ -14,36 +14,26 @@ def choose_best_move(legal_moves, board, depth=2):
     best_move = ('', float('inf'))
     start_fen = board.fen()
     frontier = legal_moves
-    # print(frontier)
     my_board = chess.Board(start_fen)
     new_frontier = []
     for move in frontier:
         current_board = deepcopy(my_board)
         current_board.push(move)
-        # print(current_board)
         leg_moves = get_legal_moves(current_board.legal_moves) 
-        # print(leg_moves)
         for m in leg_moves:
             new_frontier.append((move, m))
-            # print((move, m))
-        
-        # print(my_board)
-        
-    # print(new_frontier)
+
     tot = len(new_frontier)
-    # print(my_board)
     ct = 0
     for move in new_frontier:
         this_board = deepcopy(my_board)
-        # print(move)
         for m in move:
             this_board.push(m)
-        # print(this_board) # This is 2 moves into the future
+        print(this_board) # This is 2 moves into the future
         
         engine = ChessEngine.Engine(this_board)
         fen = this_board.fen()
-        # print(fen)
-        eval = engine.run_engine([fen],'Model_saves/Chess100kModel.joblib')
+        eval = engine.run_engine([fen])
         # print(eval)
         if eval < best_move[1]:
             best_move = (move,eval)
