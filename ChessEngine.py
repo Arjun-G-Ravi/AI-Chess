@@ -2,7 +2,48 @@ import chess
 import numpy as np
 import torch
 import torchvision
+import torchvision.transforms as transforms
+import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+
+
+class ChessDataSet(Dataset):
+    def __init__(self, X, y):
+        self.x = torch.tensor(X, dtype=torch.float32)
+        self.y = torch.tensor(y, dtype=torch.float32)
+        
+    def __getitem__(self, indexVal):
+        return self.x[indexVal], self.y[indexVal]
+    
+    def __len__(self):
+        return len(self.y)
+    
+    def __repr__(self):
+        return f'ChessDataSet Object <{format(len(self.y))}>'
+
+
+class ChessNN(nn.Module):
+    def __init__(self, inp_size, hidden1, hidden2, hidden3, out_size):
+        super(ChessNN, self).__init__()
+        self.inp_size = inp_size
+        self.lay1 = nn.Linear(inp_size, hidden1)
+        self.lay2 = nn.ReLU()
+        self.lay3 = nn.Linear(hidden1, hidden2)
+        self.lay4 = nn.ReLU()
+        self.lay5 = nn.Linear(hidden2, hidden3)
+        self.lay6 = nn.ReLU()
+        self.lay7 = nn.Linear(hidden3, out_size)
+        
+    def forward(self, x):
+        out = self.lay1(x) # maybe add float() here 
+        out = self.lay2(out)
+        out = self.lay3(out)
+        out = self.lay4(out)
+        out = self.lay5(out)
+        out = self.lay6(out)
+        out = self.lay7(out) # We don't apply sotmax the cross entropy loss will do that for us
+        return out
+
 
 class Engine:
     def __init__(self, board):
@@ -49,45 +90,72 @@ class Engine:
         
         else:
             encoding.append(1.)
-        return np.array(encoding)/12  # for normalising
+        return np.array(encoding)/12.0  # for normalising
+    
     
     def encode_y(self, y):
         if '#+' in y:
             val = float(y.replace('#+',''))
-            y = float(9999 - 100*(val-1))
+            y = float(9999. - 100*(val-1))
         elif '#-' in y:
             val = float(y.replace('#-',''))
-            y = float(-9999 + 100*(val-1))
+            y = float(-9999. + 100*(val-1))
         elif '+' in y or y == '0':
             y = float(y.replace('+',''))
         elif '-' in y:
             y = -float(y.replace('-',''))
         else:
             raise Exception('y Encoding Error')
-        return float(y/9999)  # for normalising 
+        return float(y/9999.)  # for normalising 
 
-    def train_chess_engine(self, X, y):
-        import torch
-        import torch.nn as nn
-        import torchvision
-        import torchvision.transforms as transforms
+
+    def train_chess_engine(self, X, y, num_epoch = 3, lr = 1e-5 ):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(f'The device to be used for training: {device}')
-        print(len(X), len(y))
+        # print(f'The device to be used for training: {device}')
+        X = torch.tensor([self.encode_fen(x) for x in X], dtype=torch.float32)
+        y = torch.tensor([self.encode_y(i) for i in y], dtype=torch.float32)
+        ds = ChessDataSet(X, y)
+        # print(ds)
         
-        class ChessDataSet(Dataset):
-            def __init__(self):
+        dataloader = DataLoader(dataset=ds, batch_size=4, shuffle=True, num_workers=0)
+
+        
+        model = ChessNN(70, 100, 250, 100, 1). to(device)
+        
+        lossCategory = nn.CrossEntropyLoss()
+        optimiser = torch.optim.Adam(model.parameters(), lr=lr)
+        
+        for epoch in range(num_epoch):
+            for i,(X, y) in enumerate(dataloader):     
+                X = X.reshape(-1, ).to(device)
+                y = y.to(device)
                 
-                self.x = X
-                self.y = y
-                self.m, self.n = .shape
+                output = model(X)
+                print("cow")
+                loss = lossCategory(output, y)
+                
+                loss.backward()
+                optimiser.step()
+                optimiser.zero_grad()
 
-            def __getitem__(self,indexVal):
-                return self.x[indexVal], self.y[indexVal]
-            
-            def __len__(self):
-                return self.m
+                exit()
+                
+                
+                
+                if i%100 == 0:
+                    print(f"Epoch:{epoch}  Step:{i}/45  Label:{np.array(y,dtype=np.int32)}")
+            print()
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
                 
@@ -113,8 +181,8 @@ class Engine:
         type_chart = {1:'Training set\n', 2:'Validation set\n', 3:'Test set\n'} 
         type_data ='' if not type_ else type_chart[type_]
         
-        X_encoded = np.array([self.encode_fen(x) for x in X])
-        y_encoded = np.array([self.encode_y(i) for i in y]) 
+        X_encoded = np.array([self.encode_fen(x).float() for x in X])
+        y_encoded = np.array([self.encode_y(i).float() for i in y]) 
         print(f"""{'-'*15}\n{type_data}Score: {self.model.score(X_encoded,y_encoded):.3f}\nMSE  : {self.mse(X_encoded, y_encoded):.3f}\n{'-'*15}""")
 
 if __name__ == '__main__':
@@ -142,7 +210,7 @@ if __name__ == '__main__':
     engine.train_chess_engine(X_train, y_train)
     exit()  
     # Loading previous model
-    engine.model = joblib.load('Model_saves/Chess100kModel.joblib')
+    # engine.model = joblib.load('Model_saves/Chess100kModel.joblib')
 
     # Accuracy
     engine.accuracy(X_train,y_train,1)
