@@ -10,13 +10,10 @@ class ChessDataSet(Dataset):
     def __init__(self, X, y):
         self.x = X.clone()
         self.y = y.clone()
-        
     def __getitem__(self, indexVal):
         return self.x[indexVal], self.y[indexVal]
-    
     def __len__(self):
         return len(self.y)
-    
     def __repr__(self):
         return f'ChessDataSet Object <{format(len(self.y))}>'
 
@@ -90,9 +87,7 @@ class Engine:
             encoding.append(0.)  
         else:
             encoding.append(1.)
-            
         return np.array(encoding)/12.0  # for normalising
-    
     
     def encode_y(self, y):
         try:
@@ -142,7 +137,7 @@ class Engine:
                           
             print(f"Epoch:{epoch} => Loss:{loss}")    
         t_stop = time.time()
-        print(f'Total Training Time: {(t_stop-t_start):.2f}s')
+        print(f'Total Training Time: {(t_stop-t_start):.2f}s\n')
         return model
 
     def run_engine(self, X, device='cuda', model=None):
@@ -170,7 +165,7 @@ if __name__ == '__main__':
     import joblib
  
     # # Get dataset
-    n_rows = 100000
+    n_rows = 10000
     df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv', nrows=n_rows)
     
     
