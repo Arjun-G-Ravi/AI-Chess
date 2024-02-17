@@ -3,10 +3,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-import joblib
 
 class NeuralNet(nn.Module):
-    def __init__(self, inp_size=774, h1=500, h2=100, h3=100, out_size=1):
+    def __init__(self, inp_size=774, h1=500, h2=100, out_size=1):
         super(NeuralNet, self).__init__()
         self.inp_size = inp_size
         self.lay1 = nn.Linear(inp_size, h1)
@@ -23,6 +22,7 @@ class NeuralNet(nn.Module):
         out = self.lay5(out) 
         return out
 
+
 class DataSet(Dataset):
     def __init__(self,x,y):
         self.x = x
@@ -37,13 +37,11 @@ class DataSet(Dataset):
    
 
 class Engine:
-    def __init__(self, board, model=None):
+    def __init__(self, board, model=None, device='cuda'):
         self.board = board
-        if model:
-            
-            self.model = joblib.load(model)
-        else:
-            self.model = None
+        self.device=device
+        if model:  self.model = torch.load(model)
+        else: self.model = None
 
     def get_fen(self, board):
         return board.fen()
@@ -93,7 +91,6 @@ class Engine:
                 val = float(y.replace('#-',''))
                 y = float(-9999 + 100*(val-1))
             elif '+' in y or y == '0':
-                # print(y)
                 y = float(y.replace('+',''))
             elif '-' in y:
                 y = -float(y.replace('-',''))
@@ -101,28 +98,27 @@ class Engine:
                 raise Exception('y Encoding Error')
         except:
             print('Something wrong with', y)
-            # print(type(y), y.dtype, y)
             y = float(0)
 
         return float(y/9999)  # for normalising 
 
-    def train_chess_engine(self, X, y, save=False, num_epochs=100, device='cuda'):
+    def train_chess_engine(self, X, y, save=False, num_epochs=10):
         print("Initialising...")
-        model = NeuralNet().to(device) 
+        model = NeuralNet().to(self.device) 
         lossCategory = nn.MSELoss()
-        optimiser = torch.optim.Adam(model.parameters(), lr = 1e-4)
+        optimiser = torch.optim.Adam(model.parameters(), lr = 1e-3)
 
         # Encoding
         X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
         y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
 
         dataset = DataSet(X_encoded, y_encoded)
-        train_loader = DataLoader(dataset=dataset, batch_size=500000, shuffle=True, num_workers=4)
+        train_loader = DataLoader(dataset=dataset, batch_size=1000000, shuffle=True, num_workers=4)
         print("Training...")    
         for epoch in range(num_epochs):
             for i,(x_mod, y_mod) in enumerate(train_loader):
-                x_mod = x_mod.to(device)
-                y_mod = y_mod.to(device)
+                x_mod = x_mod.to(self.device)
+                y_mod = y_mod.to(self.device)
                 y_pred = model(x_mod).view(-1)
                 loss = lossCategory(y_pred, y_mod)
                 
@@ -130,35 +126,14 @@ class Engine:
                 optimiser.step()
                 optimiser.zero_grad()
 
-            print(f"Epoch: {epoch+1}/{num_epochs}   Loss: {loss*9999}") # Loss is de-normalised before displaying to user
-
-
-        if save:
-            import joblib   
-            joblib.dump(model,'Model_saves/ChessModel.joblib')
-            
+            print(f"Epoch: {epoch+1}/{num_epochs}   Loss: {loss*9999}") # Loss is de-normalised before displaying to user           
         self.model = model
-        
-    # def mse(self, X, y):
-    #     from sklearn.metrics import mean_squared_error
-    #     y_pred =self.model.predict(X)
-    #     mse = mean_squared_error(y, y_pred)
-    #     return mse
-    
-    def run_engine(self, X, model=None, device='cuda'):  
-        ''' input: list
-        output: float '''
-        
+
+    def run_engine(self, X, model=None):  
         if model:
-            import joblib
-            self.model = joblib.load(model)
-        # print(self.model)
-        X_encoded = torch.tensor([self.encode_fen(x) for x in X]).to(device)
-        # print(X_encoded)
-            
-        out = self.model(X_encoded)
-        out = out  # de-normalise
-        return out
+            self.model = torch.load(model)
+        X_encoded = torch.tensor([self.encode_fen(x) for x in X]).to(self.device)            
+        return self.model(X_encoded)
     
     def accuracy(self, X, y,device='cuda:0'):
 
@@ -166,12 +141,11 @@ class Engine:
         y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
 
         dataset = DataSet(X_encoded, y_encoded)
-        test_loader = DataLoader(dataset=dataset, batch_size=10000, num_workers=4)
+        test_loader = DataLoader(dataset=dataset, batch_size=100000, num_workers=4)
         lossCategory = nn.MSELoss()
         sum_correct, sum_loss = 0, 0
         
         for i,(x_mod, y_mod) in enumerate(test_loader):
-            # print('banana')
             x_mod = x_mod.to(device)
             y_mod = y_mod.to(device)
             y_pred = self.model(x_mod).view(-1)
@@ -182,42 +156,6 @@ class Engine:
         print(f'Score: {sum_correct.item()}/{len(dataset)}, Accuracy: {sum_correct.item()*100/len(dataset):.2f}%')
         print('Avg_loss', sum_loss.item()/len(dataset))
 
-        
-        # print(f"""Score: {self.model.score(X_encoded,y_encoded):.3f}\n
-        #           MSE  : {self.mse(X_encoded, y_encoded):.3f}\n{'-'*15}""")
 
 if __name__ == '__main__':
-    pass
-    # Lets do engine training here
-    # import pandas as pd
-    # import numpy as np
-    # import chess
-    # from sklearn.model_selection import train_test_split
-    # import joblib
- 
-    # # # Get dataset
-    # df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=100)
-    # test_df = df.iloc[:100]
-    # X = np.array(test_df.iloc[:,0])
-    # y = np.array(test_df.iloc[:,1])
-    # # dataset split
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=True)
-    
-    # # # Initialisation
-    # board = chess.Board()
-    # engine = Engine(board)
-
-    # # # Training
-    # # print("Training model...")
-    # # engine.train_chess_engine(X_train, y_train)
-    
-    # # Loading previous model
-    # engine.model = joblib.load('Model_saves/Chess100kModel.joblib')
-
-    # # Accuracy
-    # engine.accuracy(X_train,y_train,1)
-    # engine.accuracy(X_test,y_test,3)
-    
-    # # Inference
-    # out = engine.run_engine(['rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2'])
-    # print(out)
+    print('To train the model, run training_model.ipynb')

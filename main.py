@@ -9,42 +9,31 @@ def get_legal_moves(generator_):
         l.append(i)
     return l
 
-def choose_best_move(legal_moves, board, depth=1):
+def choose_best_move(legal_moves, board, depth=1, model=None):
     print("Thinking...")
     best_move = ('', float('inf'))
     start_fen = board.fen()
     frontier = legal_moves
-    # print(frontier)
     my_board = chess.Board(start_fen)
     new_frontier = []
     for move in frontier:
         current_board = deepcopy(my_board)
         current_board.push(move)
-        # print(current_board)
         leg_moves = get_legal_moves(current_board.legal_moves) 
-        # print(leg_moves)
         for m in leg_moves:
             new_frontier.append((move, m))
-            # print((move, m))
-        
-        # print(my_board)
-        
-    # print(new_frontier)
+            
     tot = len(new_frontier)
-    # print(my_board)
     ct = 0
     for move in new_frontier:
         this_board = deepcopy(my_board)
-        # print(move)
         for m in move:
             this_board.push(m)
         # print(this_board) # This is 2 moves into the future
         
         engine = ChessEngine.Engine(this_board)
         fen = this_board.fen()
-        # print(fen)
-        eval = engine.run_engine([fen],model='Model_saves/NewEncodingModel_100k_acc_60.joblib')
-        # print(eval)
+        eval = engine.run_engine([fen],model=model)
         if eval < best_move[1]:
             best_move = (move,eval)
         ct += 1
@@ -54,16 +43,17 @@ def choose_best_move(legal_moves, board, depth=1):
 
 # ----------------------------
 
+model = 'Model_saves/Chess1MModel.pt' 
 board = chess.Board()
 draw = board.is_stalemate() or board.is_insufficient_material() or board.can_claim_threefold_repetition() or board.can_claim_fifty_moves()
 
 while True:
-    players_move = 1
+    players_move = True
     while players_move:
         try:
             move = input("\n\nYour move: ")
             board.push_san(move)
-            players_move = 0
+            players_move = False
         except Exception:
             print("Move is invalid! Try again.")
 
@@ -76,7 +66,7 @@ while True:
         break
 
     legal_moves = get_legal_moves(board.legal_moves)    
-    ai_move = choose_best_move(legal_moves, board)
+    ai_move = choose_best_move(legal_moves, board, model=model)
     
     print(f'I will play: {ai_move}\n')
     board.push(ai_move)
