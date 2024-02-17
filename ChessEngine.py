@@ -117,7 +117,7 @@ class Engine:
         y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
 
         dataset = DataSet(X_encoded, y_encoded)
-        train_loader = DataLoader(dataset=dataset, batch_size=10000, shuffle=True, num_workers=4)
+        train_loader = DataLoader(dataset=dataset, batch_size=500000, shuffle=True, num_workers=4)
         print("Training...")    
         for epoch in range(num_epochs):
             for i,(x_mod, y_mod) in enumerate(train_loader):
