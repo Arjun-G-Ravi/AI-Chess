@@ -102,7 +102,7 @@ class Engine:
 
         return float(y/9999)  # for normalising 
 
-    def train_chess_engine(self, X, y, save=False, num_epochs=10):
+    def train_chess_engine(self, X, y, save=False, num_epochs=100):
         print("Initialising...")
         model = NeuralNet().to(self.device) 
         lossCategory = nn.MSELoss()
@@ -113,7 +113,7 @@ class Engine:
         y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
 
         dataset = DataSet(X_encoded, y_encoded)
-        train_loader = DataLoader(dataset=dataset, batch_size=1000000, shuffle=True, num_workers=4)
+        train_loader = DataLoader(dataset=dataset, batch_size=1500000, shuffle=True, num_workers=4)
         print("Training...")    
         for epoch in range(num_epochs):
             for i,(x_mod, y_mod) in enumerate(train_loader):
