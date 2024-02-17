@@ -132,7 +132,7 @@ class Engine:
     def run_engine(self, X, model=None):  
         if model:
             self.model = torch.load(model)
-        X_encoded = torch.tensor([self.encode_fen(x) for x in X]).to(self.device)            
+        X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X])).to(self.device)            
         return self.model(X_encoded)
     
     def accuracy(self, X, y,device='cuda:0'):

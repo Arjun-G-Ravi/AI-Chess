@@ -2,6 +2,7 @@ import chess
 import ChessEngine
 import numpy as np
 from copy import deepcopy
+import torch
 
 def get_legal_moves(generator_):
     l = []
@@ -41,6 +42,31 @@ def choose_best_move(legal_moves, board, depth=1, model=None):
     print('BEST MOVE:',best_move)
     return best_move[0][0]
 
+
+def new_choose_best_move(legal_moves, board, depth=1, model=None):
+    print("Thinking...")
+    # best_move = ('', float('inf'))
+    start_fen = board.fen()
+    frontier = legal_moves
+    my_board = chess.Board(start_fen)
+    curr_move = []
+    future_fen = []
+    for move in frontier:
+        current_board = deepcopy(my_board)
+        current_board.push(move)
+        next_moves = get_legal_moves(current_board.legal_moves) 
+        for m in next_moves:
+            curr_move.append(move)
+            future_board = deepcopy(current_board)
+            future_board.push(m)
+            future_fen.append(future_board.fen())
+            
+    engine = ChessEngine.Engine(my_board)
+    eval = engine.run_engine(future_fen,model=model).view(-1)
+    print('Eval:',round(min(eval).item()*9999,2))
+    return curr_move[torch.argmin(eval).item()]
+
+
 # ----------------------------
 
 model = 'Model_saves/Chess1MModel.pt' 
@@ -66,7 +92,7 @@ while True:
         break
 
     legal_moves = get_legal_moves(board.legal_moves)    
-    ai_move = choose_best_move(legal_moves, board, model=model)
+    ai_move = new_choose_best_move(legal_moves, board, model=model)
     
     print(f'I will play: {ai_move}\n')
     board.push(ai_move)
