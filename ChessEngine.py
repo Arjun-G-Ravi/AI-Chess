@@ -85,33 +85,40 @@ class Engine:
         return np.array(encoding,dtype=np.float32)
  
     def encode_y(self, y):
-        if '#+' in y:
-            val = float(y.replace('#+',''))
-            y = float(9999 - 100*(val-1))
-        elif '#-' in y:
-            val = float(y.replace('#-',''))
-            y = float(-9999 + 100*(val-1))
-        elif '+' in y or y == '0':
-            y = float(y.replace('+',''))
-        elif '-' in y:
-            y = -float(y.replace('-',''))
-        else:
-            raise Exception('y Encoding Error')
-        # print(y)
+        try:
+            if '#+' in y:
+                val = float(y.replace('#+',''))
+                y = float(9999 - 100*(val-1))
+            elif '#-' in y:
+                val = float(y.replace('#-',''))
+                y = float(-9999 + 100*(val-1))
+            elif '+' in y or y == '0':
+                # print(y)
+                y = float(y.replace('+',''))
+            elif '-' in y:
+                y = -float(y.replace('-',''))
+            else:
+                raise Exception('y Encoding Error')
+        except:
+            print('Something wrong with', y)
+            # print(type(y), y.dtype, y)
+            y = float(0)
+
         return float(y/9999)  # for normalising 
 
     def train_chess_engine(self, X, y, save=False, num_epochs=100, device='cuda'):
+        print("Initialising...")
         model = NeuralNet().to(device) 
         lossCategory = nn.MSELoss()
         optimiser = torch.optim.Adam(model.parameters(), lr = 1e-4)
 
         # Encoding
-        X_encoded = torch.tensor([self.encode_fen(x) for x in X])
-        y_encoded = torch.tensor([self.encode_y(i) for i in y])
+        X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
+        y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
 
         dataset = DataSet(X_encoded, y_encoded)
-        train_loader = DataLoader(dataset=dataset, batch_size=10000, shuffle=True, num_workers=0)
-
+        train_loader = DataLoader(dataset=dataset, batch_size=10000, shuffle=True, num_workers=4)
+        print("Training...")    
         for epoch in range(num_epochs):
             for i,(x_mod, y_mod) in enumerate(train_loader):
                 x_mod = x_mod.to(device)
@@ -123,21 +130,20 @@ class Engine:
                 optimiser.step()
                 optimiser.zero_grad()
 
-                if ((i)%200) == 0:
-                    print(f"Epoch:{epoch+1}/{num_epochs}  Loss:{loss*9999}") # Loss is de-normalised before displaying to user
+            print(f"Epoch: {epoch+1}/{num_epochs}   Loss: {loss*9999}") # Loss is de-normalised before displaying to user
 
 
         if save:
-            import joblib
+            import joblib   
             joblib.dump(model,'Model_saves/ChessModel.joblib')
             
         self.model = model
         
-    def mse(self, X, y):
-        from sklearn.metrics import mean_squared_error
-        y_pred =self.model.predict(X)
-        mse = mean_squared_error(y, y_pred)
-        return mse
+    # def mse(self, X, y):
+    #     from sklearn.metrics import mean_squared_error
+    #     y_pred =self.model.predict(X)
+    #     mse = mean_squared_error(y, y_pred)
+    #     return mse
     
     def run_engine(self, X, model=None, device='cuda'):  
         ''' input: list
@@ -155,12 +161,12 @@ class Engine:
         return out
     
     def accuracy(self, X, y,device='cuda:0'):
-        
-        X_encoded = torch.tensor([self.encode_fen(x) for x in X])
-        y_encoded = torch.tensor([self.encode_y(i) for i in y])
+
+        X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
+        y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
 
         dataset = DataSet(X_encoded, y_encoded)
-        test_loader = DataLoader(dataset=dataset, batch_size=10000, num_workers=0)
+        test_loader = DataLoader(dataset=dataset, batch_size=10000, num_workers=4)
         lossCategory = nn.MSELoss()
         sum_correct, sum_loss = 0, 0
         
@@ -173,7 +179,7 @@ class Engine:
             sum_correct += torch.sum(torch.abs((y_mod - y_pred)*9999) < 100)
             
             
-        print(f'Score: {sum_correct.item()}/{len(dataset)}, Accuracy: {sum_correct.item()/len(dataset)}')
+        print(f'Score: {sum_correct.item()}/{len(dataset)}, Accuracy: {sum_correct.item()*100/len(dataset):.2f}%')
         print('Avg_loss', sum_loss.item()/len(dataset))
 
         
