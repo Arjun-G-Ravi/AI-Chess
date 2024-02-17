@@ -72,6 +72,7 @@ class Engine:
         # Encoding
         X_encoded = np.array([self.encode_fen(x) for x in X])
         y_encoded = np.array([self.encode_y(i) for i in y])
+        print(X_encoded[0])
 
         model.fit(X_encoded,y_encoded)
         joblib.dump(model,'Model_saves/ChessModel.joblib' )
@@ -112,8 +113,8 @@ if __name__ == '__main__':
     import joblib
  
     # # Get dataset
-    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=10000)
-    test_df = df.iloc[:10000]
+    df = pd.read_csv('/home/arjun/Desktop/Datasets/chessData.csv',nrows=100)
+    test_df = df.iloc[:100]
     X = np.array(test_df.iloc[:,0])
     y = np.array(test_df.iloc[:,1])
     # dataset split

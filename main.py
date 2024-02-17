@@ -9,7 +9,7 @@ def get_legal_moves(generator_):
         l.append(i)
     return l
 
-def choose_best_move(legal_moves, board, depth=2):
+def choose_best_move(legal_moves, board, depth=1):
     print("Thinking...")
     best_move = ('', float('inf'))
     start_fen = board.fen()
