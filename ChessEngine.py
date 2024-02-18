@@ -131,12 +131,12 @@ class Engine:
                 optimiser.zero_grad()
 
             print(f"Epoch: {epoch+1}/{num_epochs}   Loss: {loss*9999}") # Loss is de-normalised before displaying to user           
-            if loss*9999 < 140 and loss*9999 > 120: torch.save(self.model,'Model_save_120/ChessModel.pt')
-            elif loss*9999 < 100 and loss*9999 > 90: torch.save(self.model,'Model_save_90/ChessModel.pt')
-            elif loss*9999 < 70 and loss*9999 > 60: torch.save(self.model,'Model_save_60/ChessModel.pt')
+            if loss*9999 < 140 and loss*9999 > 120: torch.save(model,'Model_saves/ChessModel_120.pt')
+            elif loss*9999 < 100 and loss*9999 > 90: torch.save(model,'Model_saves/ChessModel_90.pt')
+            elif loss*9999 < 70 and loss*9999 > 60: torch.save(model,'Model_saves/ChessModel_60.pt')
             
             if loss*9999 < 50:
-                 torch.save(self.model,'Model_save_50/ChessModel.pt')
+                 torch.save(self.model,'Model_saves/ChessModel_50.pt')
                  break
             
         self.model = model
