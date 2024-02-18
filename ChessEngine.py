@@ -106,7 +106,7 @@ class Engine:
 
         return float(y/9999)  # for normalising 
 
-    def train_chess_engine(self, X, y, save=False, num_epochs=100):
+    def train_chess_engine(self, X, y, save=False, num_epochs=1000):
         print("Initialising...")
         model = NeuralNet().to(self.device) 
         lossCategory = nn.MSELoss()
@@ -131,6 +131,14 @@ class Engine:
                 optimiser.zero_grad()
 
             print(f"Epoch: {epoch+1}/{num_epochs}   Loss: {loss*9999}") # Loss is de-normalised before displaying to user           
+            if loss*9999 < 140 and loss*9999 > 120: torch.save(self.model,'Model_save_120/ChessModel.pt')
+            elif loss*9999 < 100 and loss*9999 > 90: torch.save(self.model,'Model_save_90/ChessModel.pt')
+            elif loss*9999 < 70 and loss*9999 > 60: torch.save(self.model,'Model_save_60/ChessModel.pt')
+            
+            if loss*9999 < 50:
+                 torch.save(self.model,'Model_save_50/ChessModel.pt')
+                 break
+            
         self.model = model
 
     def run_engine(self, X, model=None):  
@@ -145,7 +153,7 @@ class Engine:
         y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
 
         dataset = DataSet(X_encoded, y_encoded)
-        test_loader = DataLoader(dataset=dataset, batch_size=100000, num_workers=4)
+        test_loader = DataLoader(dataset=dataset, batch_size=600000, num_workers=4)
         lossCategory = nn.MSELoss()
         sum_correct, sum_loss = 0, 0
         
