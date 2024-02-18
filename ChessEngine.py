@@ -5,14 +5,16 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
 class NeuralNet(nn.Module):
-    def __init__(self, inp_size=774, h1=500, h2=100, out_size=1):
+    def __init__(self, inp_size=774, h1=700, h2=700, h3=400, out_size=1):
         super(NeuralNet, self).__init__()
         self.inp_size = inp_size
         self.lay1 = nn.Linear(inp_size, h1)
         self.lay2 = nn.ReLU()
         self.lay3 = nn.Linear(h1, h2)
         self.lay4 = nn.ReLU()
-        self.lay5 = nn.Linear(h2, out_size)
+        self.lay5 = nn.Linear(h2, h3)
+        self.lay6 = nn.ReLU()
+        self.lay7 = nn.Linear(h3, out_size)
 
     def forward(self,x):
         out = self.lay1(x)
@@ -20,6 +22,8 @@ class NeuralNet(nn.Module):
         out = self.lay3(out) 
         out = self.lay4(out) 
         out = self.lay5(out) 
+        out = self.lay6(out) 
+        out = self.lay7(out) 
         return out
 
 
