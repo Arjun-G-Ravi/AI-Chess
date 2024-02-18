@@ -10,39 +10,6 @@ def get_legal_moves(generator_):
         l.append(i)
     return l
 
-# def choose_best_move(legal_moves, board, depth=1, model=None):
-#     print("Thinking...")
-#     best_move = ('', float('inf'))
-#     start_fen = board.fen()
-#     frontier = legal_moves
-#     my_board = chess.Board(start_fen)
-#     new_frontier = []
-#     for move in frontier:
-#         current_board = deepcopy(my_board)
-#         current_board.push(move)
-#         leg_moves = get_legal_moves(current_board.legal_moves) 
-#         for m in leg_moves:
-#             new_frontier.append((move, m))
-            
-#     tot = len(new_frontier)
-#     ct = 0
-#     for move in new_frontier:
-#         this_board = deepcopy(my_board)
-#         for m in move:
-#             this_board.push(m)
-#         # print(this_board) # This is 2 moves into the future
-        
-#         engine = ChessEngine.Engine(this_board)
-#         fen = this_board.fen()
-#         eval = engine.run_engine([fen],model=model)
-#         if eval < best_move[1]:
-#             best_move = (move,eval)
-#         ct += 1
-#         print(f'Progress: {ct}/ {tot}')
-#     print('BEST MOVE:',best_move)
-#     return best_move[0][0]
-
-
 def choose_best_move(legal_moves, board, depth=1, model=None):
     print("Thinking...")
     start_fen = board.fen()
@@ -66,7 +33,7 @@ def choose_best_move(legal_moves, board, depth=1, model=None):
     return curr_move[torch.argmin(eval).item()]
 
 
-# ----------------------------
+# ---------------------------- Run me
 
 model = 'Model_saves/Chess12M_bigger_Model.pt'
 board = chess.Board()
