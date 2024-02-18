@@ -55,8 +55,8 @@ class DataSet(Dataset):
 class Engine:
     def __init__(self, board, model=None, device='cuda'):
         self.board = board
-        self.device=device
-        if model:  self.model = torch.load(model)
+        self.device = device
+        if model: self.model = torch.load(model)
         else: self.model = None
 
     def get_fen(self, board):
@@ -118,19 +118,19 @@ class Engine:
 
         return float(y/9999)  # for normalising 
 
-    def train_chess_engine(self, X, y, save=False, num_epochs=1000):
-        print("Initialising...")
-        model = NeuralNet().to(self.device) 
+    def train_chess_engine(self, X_encoded, y_encoded, save=False, num_epochs=1000):
+        if not self.model:
+            print('Initialising with new model')
+            model = NeuralNet().to(self.device) 
+        else:
+            model = self.model.to(self.device)
+            print("Initialising with existing model")
+            
         lossCategory = nn.MSELoss()
         optimiser = torch.optim.Adam(model.parameters(), lr = 1e-3)
 
-        # Encoding
-        X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
-        y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
-
         dataset = DataSet(X_encoded, y_encoded)
         train_loader = DataLoader(dataset=dataset, batch_size=1500000, shuffle=True, num_workers=4)
-        print("Training...")    
         for epoch in range(num_epochs):
             for i,(x_mod, y_mod) in enumerate(train_loader):
                 x_mod = x_mod.to(self.device)
@@ -148,9 +148,10 @@ class Engine:
             elif loss*9999 < 70 and loss*9999 > 60: torch.save(model,'Model_saves/ChessModel_60.pt')
             elif loss*9999 < 50 and loss*9999 > 30: torch.save(model,'Model_saves/ChessModel_30.pt')
             elif loss*9999 < 20 and loss*9999 > 10: torch.save(model,'Model_saves/ChessModel_10.pt')
+            elif loss*9999 < 5 and loss*9999 > 1: torch.save(model,'Model_saves/ChessModel_1.pt')
             
-            if loss*9999 < 5:
-                 torch.save(self.model,'Model_saves/ChessModel_5.pt')
+            if loss*9999 < .5:
+                 torch.save(model,'Model_saves/ChessModel_05.pt')
                  break
             
         self.model = model
@@ -161,11 +162,7 @@ class Engine:
         X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X])).to(self.device)            
         return self.model(X_encoded)
     
-    def accuracy(self, X, y,device='cuda:0'):
-
-        X_encoded = torch.tensor(np.array([self.encode_fen(x) for x in X]), dtype=torch.float32)
-        y_encoded = torch.tensor(np.array([self.encode_y(i) for i in y]), dtype=torch.float32)
-
+    def accuracy(self, X_encoded, y_encoded, device='cuda'):
         dataset = DataSet(X_encoded, y_encoded)
         test_loader = DataLoader(dataset=dataset, batch_size=600000, num_workers=4)
         lossCategory = nn.MSELoss()

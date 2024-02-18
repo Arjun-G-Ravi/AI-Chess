@@ -35,7 +35,7 @@ def choose_best_move(legal_moves, board, depth=1, model=None):
 
 # ---------------------------- Run me
 
-model = 'Model_saves/Chess12M_bigger_Model.pt'
+model = 'Model_saves/ChessModel_89_75.pt'
 board = chess.Board()
 draw = board.is_stalemate() or board.is_insufficient_material() or board.can_claim_threefold_repetition() or board.can_claim_fifty_moves()
 
