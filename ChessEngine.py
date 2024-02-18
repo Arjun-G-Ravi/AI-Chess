@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
 class NeuralNet(nn.Module):
-    def __init__(self, inp_size=774, h1=700, h2=700, h3=400, out_size=1):
+    def __init__(self, inp_size=774, h1=1000, h2=1000, h3=700, h4=700, h5=256, h6=256, out_size=1):
         super(NeuralNet, self).__init__()
         self.inp_size = inp_size
         self.lay1 = nn.Linear(inp_size, h1)
@@ -14,8 +14,14 @@ class NeuralNet(nn.Module):
         self.lay4 = nn.ReLU()
         self.lay5 = nn.Linear(h2, h3)
         self.lay6 = nn.ReLU()
-        self.lay7 = nn.Linear(h3, out_size)
-
+        self.lay7 = nn.Linear(h3, h4)
+        self.lay8 = nn.ReLU()
+        self.lay9 = nn.Linear(h4, h5)
+        self.lay10 = nn.ReLU()
+        self.lay11 = nn.Linear(h5, h6)
+        self.lay12 = nn.ReLU()
+        self.lay13 = nn.Linear(h6, out_size)
+        
     def forward(self,x):
         out = self.lay1(x)
         out = self.lay2(out)
@@ -24,6 +30,12 @@ class NeuralNet(nn.Module):
         out = self.lay5(out) 
         out = self.lay6(out) 
         out = self.lay7(out) 
+        out = self.lay8(out) 
+        out = self.lay9(out) 
+        out = self.lay10(out) 
+        out = self.lay11(out) 
+        out = self.lay12(out) 
+        out = self.lay13(out) 
         return out
 
 
@@ -134,9 +146,11 @@ class Engine:
             if loss*9999 < 140 and loss*9999 > 120: torch.save(model,'Model_saves/ChessModel_120.pt')
             elif loss*9999 < 100 and loss*9999 > 90: torch.save(model,'Model_saves/ChessModel_90.pt')
             elif loss*9999 < 70 and loss*9999 > 60: torch.save(model,'Model_saves/ChessModel_60.pt')
+            elif loss*9999 < 50 and loss*9999 > 30: torch.save(model,'Model_saves/ChessModel_30.pt')
+            elif loss*9999 < 20 and loss*9999 > 10: torch.save(model,'Model_saves/ChessModel_10.pt')
             
-            if loss*9999 < 50:
-                 torch.save(self.model,'Model_saves/ChessModel_50.pt')
+            if loss*9999 < 5:
+                 torch.save(self.model,'Model_saves/ChessModel_5.pt')
                  break
             
         self.model = model
