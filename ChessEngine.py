@@ -149,9 +149,12 @@ class Engine:
             elif loss*9999 < 50 and loss*9999 > 30: torch.save(model,'Model_saves/ChessModel_30.pt')
             elif loss*9999 < 20 and loss*9999 > 10: torch.save(model,'Model_saves/ChessModel_10.pt')
             elif loss*9999 < 5 and loss*9999 > 1: torch.save(model,'Model_saves/ChessModel_1.pt')
+            elif loss*9999 < 1 and loss*9999 > .5: torch.save(model,'Model_saves/ChessModel_-5.pt')
+            elif loss*9999 < .5 and loss*9999 > .1: torch.save(model,'Model_saves/ChessModel_-1.pt')
+            elif loss*9999 < .1 and loss*9999 > .05: torch.save(model,'Model_saves/ChessModel_-05.pt')
             
-            if loss*9999 < .5:
-                 torch.save(model,'Model_saves/ChessModel_05.pt')
+            if loss*9999 < .05:
+                 torch.save(model,'Model_saves/ChessModel_-05_last.pt')
                  break
             
         self.model = model
