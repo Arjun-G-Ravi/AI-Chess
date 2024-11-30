@@ -94,11 +94,12 @@ def main():
                 else:
                     try:
                         move = chess.Move(selected_square, clicked_square)
-                        move_if_promotion = chess.Move(selected_square, clicked_square, 3)
+                        move_if_promotion = chess.Move(selected_square, clicked_square, 2)
 
                         if move in board.legal_moves or move_if_promotion in board.legal_moves:
                             if move in board.legal_moves: board.push(move)
-                            else: board.push(move_if_promotion)
+                            else: # This happens only if there is a promotion present, we auto-queeen
+                                board.push(move_if_promotion)
                             
                             print("Current board position (FEN):", board.fen())
                             
