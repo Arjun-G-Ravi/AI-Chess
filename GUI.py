@@ -113,24 +113,32 @@ def main():
                                 # When AI will be ready, we go:
                                 # computer_move = get_best_move()
                                 board.push(computer_move)
-                                print("Computer's move (FEN):", board.fen())
-                                print(board.outcome())
-                            
+                                if board.is_checkmate():
+                                    draw_board()
+                                    draw_pieces()
+                                    pygame.display.flip()
+                                    print('It is a checkmate. The Computer wins!')
+                                    time.sleep(3)
+                                    pygame.quit()
+                                    sys.exit()
                             else: # game is over
                                 # The game is somehow over
-                                # if 
-                                print('You won (or the game is draw)')
+                                if board.is_checkmate():
+                                    draw_board()
+                                    draw_pieces()
+                                    pygame.display.flip()
+                                    print('It is a checkmate. You win!')
+                                else:
+                                    draw_board()
+                                    draw_pieces()
+                                    pygame.display.flip()
+                                    print("The game is a draw")
                                 time.sleep(3)
                                 pygame.quit()
                                 sys.exit()
                         
                         else:
                             print('Illegal move')
-                            print(move, move_if_promotion)
-                            print(board)
-                            print(board.legal_moves)
-                        # Reset selection
-
                         selected_square = None
                     
                     except Exception as e:
