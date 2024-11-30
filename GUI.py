@@ -99,19 +99,26 @@ def main():
                         if move in board.legal_moves or move_if_promotion in board.legal_moves:
                             if move in board.legal_moves:
                                 board.push(move)
-                            else: # This happens only if there is a promotion present, we auto-queeen
+                            else: # This happens only if there is a promotion present, we auto-queen
                                 board.push(move_if_promotion)
                             
                             if not board.is_game_over():
+                                
+                                # Choosing the first move in the list to play as Computer
                                 computer_move = chess.Move.null()
                                 for possible_move in board.legal_moves:
                                     computer_move = possible_move
                                     break
-                                
+
+                                # When AI will be ready, we go:
+                                # computer_move = get_best_move()
                                 board.push(computer_move)
                                 print("Computer's move (FEN):", board.fen())
+                                print(board.outcome())
                             
                             else: # game is over
+                                # The game is somehow over
+                                # if 
                                 print('You won (or the game is draw)')
                                 time.sleep(3)
                                 pygame.quit()
