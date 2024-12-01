@@ -56,9 +56,10 @@ class MLPEngine(nn.Module):
     def __init__(self, embedding_dim=32):
         super(MLPEngine, self).__init__()
         self.embd1 = nn.Embedding(70,  embedding_dim) # I've no idea what the 100 does
-        self.l1 = nn.Linear( 70*embedding_dim, 100)
-        self.l2 = nn.Linear(100, 1)
-        self.dropout1 = nn.Dropout(0.2)
+        self.l1 = nn.Linear( 70*embedding_dim, 1024)
+        self.l2 = nn.Linear(1024, 128)
+        self.l3 = nn.Linear(128, 1)
+        self.dropout1 = nn.Dropout(0)
     
     def forward(self, x):
         out = self.embd1(x)
@@ -68,6 +69,7 @@ class MLPEngine(nn.Module):
         out = torch.relu(self.l1(out))
         out = self.dropout1(out)
         out = torch.relu(self.l2(out))
+        out = self.l3(out)
         return out
 
 
