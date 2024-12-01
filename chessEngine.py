@@ -3,9 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class chessEngine:
-    def __init__(self):
-        pass
+class ChessEncoder:
 
     def encode_fen(self, fen):
         fen = fen.split(' ')[:4]
@@ -52,24 +50,29 @@ class chessEngine:
             score = float(score.replace('+',''))
         elif '-' in score:
             score = -float(score.replace('-',''))
-        else:
-            raise Exception('y Encoding Error')
-        # print(float(score/9999))
-        return float(score/9999)
+        return float(score)/9999
     
-    def train(self, X, y):
-
-        
-        pass
-
-
-class MLP(nn.Module):
-    def __init__(self):
-        
+class MLPEngine(nn.Module):
+    def __init__(self, embedding_dim=32):
+        super(MLPEngine, self).__init__()
+        self.embd1 = nn.Embedding(70,  embedding_dim) # I've no idea what the 100 does
+        self.l1 = nn.Linear( 70*embedding_dim, 100)
+        self.l2 = nn.Linear(100, 1)
+        self.dropout1 = nn.Dropout(0.2)
+    
+    def forward(self, x):
+        out = self.embd1(x)
+        # print(out.shape)
+        out = torch.flatten(out, start_dim=1)
+        # print(out.shape)
+        out = torch.relu(self.l1(out))
+        out = self.dropout1(out)
+        out = torch.relu(self.l2(out))
+        return out
 
 
 if __name__ == '__main__':
-    c = chessEngine()
+    c = ChessEncoder()
     x = c.encode_fen('rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2')
     X = []
     for i in range(16):
