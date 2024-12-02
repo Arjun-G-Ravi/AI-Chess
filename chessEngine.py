@@ -50,21 +50,32 @@ class ChessEncoder:
             score = float(score.replace('+',''))
         elif '-' in score:
             score = -float(score.replace('-',''))
-        return float(score)/9999
+        return float(score)
     
 class MLPEngine(nn.Module):
     def __init__(self, embedding_dim=32):
         super(MLPEngine, self).__init__()
-        self.embd1 = nn.Embedding(70,  embedding_dim) # I've no idea what the 100 does
+        self.embd1 = nn.Embedding(70,  embedding_dim)
         self.l1 = nn.Linear( 70*embedding_dim, 1024)
         self.l2 = nn.Linear(1024, 128)
         self.l3 = nn.Linear(128, 1)
-        self.dropout1 = nn.Dropout(0)
+        self.dropout1 = nn.Dropout(0.2)
+        torch.nn.init.xavier_uniform_(self.l1.weight)
+        torch.nn.init.xavier_uniform_(self.l2.weight)
+        torch.nn.init.xavier_uniform_(self.l3.weight)
+        torch.nn.init.xavier_uniform_(self.embd1.weight)
+        # self.l1.bias.data.fill_(0.01)
+        # self.l2.bias.data.fill_(0.01)
+        # self.l3.bias.data.fill_(0.01)
+
     
     def forward(self, x):
         out = self.embd1(x)
         # print(out.shape)
-        out = torch.flatten(out, start_dim=1)
+        if not self.training:
+            out = torch.flatten(out)
+        else:
+            out = torch.flatten(out, start_dim=1)
         # print(out.shape)
         out = torch.relu(self.l1(out))
         out = self.dropout1(out)

@@ -111,7 +111,7 @@ def main():
                                     break
 
                                 # When AI will be ready, we go:
-                                # computer_move = get_best_move()
+                                # computer_move = get_best_move(board)
                                 board.push(computer_move)
                                 if board.is_checkmate():
                                     draw_board()
