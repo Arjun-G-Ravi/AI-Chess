@@ -6,17 +6,43 @@ class ChessEncoder:
 
     def encode_fen(self, fen):
         fen = fen.split(' ')[:4]
+        print(fen)
         encoding = []
+        white_encoding = []
+        black_encoding = []
+        tot_piece_value_white = 0
+        tot_piece_value_black = 0
+        piece_values = {
+            'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9,
+            'p': -1, 'n': -3, 'b': -3, 'r': -5, 'q': -9, 'k':0, 'K':0}
         piece_hash_map = {'K':1, 'Q':2, 'R':3, 'B':4, 'N':5, 'P':6, 'k':7, 'q':8, 'r':9, 'b':10, 'n':11, 'p':12}
         for i in fen[0].replace('/', ''):
             if not i.isdigit():
                 encoding.append(piece_hash_map[i])
+                if i.isupper():
+                    white_encoding.append(piece_hash_map[i])
+                    tot_piece_value_white += piece_values[i]
+                    black_encoding.append(0)
+                elif not i.isupper():
+                    black_encoding.append(piece_hash_map[i])
+                    white_encoding.append(0)
+                    tot_piece_value_black += -piece_values[i]
+                else:
+                    raise 'error here 1'
             elif i.isdigit():
                 for _ in range(int(i)):
                     encoding.append(0)
+                    white_encoding.append(0)
+                    black_encoding.append(0)
             else: 
                 print('Something wierd here!')
-        assert len(encoding) == 64
+                raise 'error here 2'
+        # print(len(encoding), len(white_encoding), len(black_encoding))
+        # print(white_encoding)
+        encoding.extend(white_encoding)
+        encoding.extend(black_encoding)
+        # print(len(encoding))
+        assert len(encoding) == 64*3
         
         # Whose move?
         if fen[1] == 'w':
@@ -31,11 +57,18 @@ class ChessEncoder:
             else:
                 encoding.append(0)
 
+        # En passant availability
         if fen[3] == '-':
             encoding.append(0.)  
         else:
             encoding.append(1.)
-        assert(len(encoding) == 70)
+
+        # encode piece values
+        encoding.append(tot_piece_value_white)
+        encoding.append(tot_piece_value_black)
+
+        assert(len(encoding) == 200)
+        # print(encoding)
         return encoding
 
     def encode_score(self, score):
@@ -54,8 +87,8 @@ class ChessEncoder:
 class MLPEngine(nn.Module):
     def __init__(self, embedding_dim=32):
         super(MLPEngine, self).__init__()
-        self.embd1 = nn.Embedding(70,  embedding_dim)
-        self.l1 = nn.Linear(70*embedding_dim, 1024)
+        self.embd1 = nn.Embedding(200,  embedding_dim)
+        self.l1 = nn.Linear(200*embedding_dim, 1024)
         self.ln1 = nn.LayerNorm(1024)
         self.l2 = nn.Linear(1024, 128)
         self.ln2 = nn.LayerNorm(128)
@@ -76,9 +109,9 @@ class MLPEngine(nn.Module):
         else:
             out = torch.flatten(out, start_dim=1)
         # print(out.shape)
-        out = F.silu(self.ln1(self.l1(out)))    
+        out = F.leaky_relu(self.ln1(self.l1(out)))    
         out = self.dropout1(out)
-        out = F.silu(self.ln2(self.l2(out)))
+        out = F.leaky_relu(self.ln2(self.l2(out)))
         # out = self.dropout2(out)
         out = self.l3(out)
         return out
