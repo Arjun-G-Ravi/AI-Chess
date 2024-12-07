@@ -76,9 +76,9 @@ class MLPEngine(nn.Module):
         else:
             out = torch.flatten(out, start_dim=1)
         # print(out.shape)
-        out = F.leaky_relu(self.ln1(self.l1(out)))    
+        out = F.gelu(self.ln1(self.l1(out)))    
         out = self.dropout1(out)
-        out = F.leaky_relu(self.ln2(self.l2(out)))
+        out = F.gelu(self.ln2(self.l2(out)))
         # out = self.dropout2(out)
         out = self.l3(out)
         return out
