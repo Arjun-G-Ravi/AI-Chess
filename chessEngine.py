@@ -87,15 +87,15 @@ class MLPEngine(nn.Module):
         super(MLPEngine, self).__init__()
         self.embd1 = nn.Embedding(200,  embedding_dim)
         self.l1 = nn.Linear(200*embedding_dim, 1024)
-        self.ln1 = nn.LayerNorm(1024)
+        self.ln1 = nn.BatchNorm1d(1024)
         self.l2 = nn.Linear(1024, 128)
-        self.ln2 = nn.LayerNorm(128)
+        self.ln2 = nn.BatchNorm1d(128)
         self.l3 = nn.Linear(128, 1)
         self.dropout1 = nn.Dropout(0.2)
         self.dropout2 = nn.Dropout(0.1)
         torch.nn.init.kaiming_uniform_(self.l1.weight)
         torch.nn.init.kaiming_uniform_(self.l2.weight)
-        torch.nn.init.kaiming_uniform_(self.l3.weight)
+        torch.nn.init.kaiming_uniform_(self.l3.weight) # xavier
         torch.nn.init.kaiming_uniform_(self.embd1.weight)
 
     
