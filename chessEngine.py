@@ -87,16 +87,21 @@ class MLPEngine(nn.Module):
         super(MLPEngine, self).__init__()
         self.embd1 = nn.Embedding(200,  embedding_dim)
         self.l1 = nn.Linear(200*embedding_dim, 1024)
-        self.ln1 = nn.BatchNorm1d(1024)
-        self.l2 = nn.Linear(1024, 128)
-        self.ln2 = nn.BatchNorm1d(128)
-        self.l3 = nn.Linear(128, 1)
-        self.dropout1 = nn.Dropout(0.2)
+        self.bn1 = nn.BatchNorm1d(1024)
+        self.l2 = nn.Linear(1024, 512)
+        self.bn2 = nn.BatchNorm1d(512)
+        self.l3 = nn.Linear(512, 256)
+        self.bn3 = nn.BatchNorm1d(256)
+        self.l4 = nn.Linear(256, 128)
+        self.bn4 = nn.BatchNorm1d(128)
+        self.l5= nn.Linear(128, 1)
+        self.dropout1 = nn.Dropout(0.1)
         self.dropout2 = nn.Dropout(0.1)
-        torch.nn.init.kaiming_uniform_(self.l1.weight)
-        torch.nn.init.kaiming_uniform_(self.l2.weight)
-        torch.nn.init.kaiming_uniform_(self.l3.weight) # xavier
-        torch.nn.init.kaiming_uniform_(self.embd1.weight)
+        self.dropout3 = nn.Dropout(0.1)
+        torch.nn.init.kaiming_uniform_(self.l1.weight, nonlinearity='leaky_relu')
+        torch.nn.init.kaiming_uniform_(self.l2.weight, nonlinearity='leaky_relu')
+        torch.nn.init.kaiming_uniform_(self.l3.weight, nonlinearity='leaky_relu') # xavier
+        torch.nn.init.kaiming_uniform_(self.embd1.weight, nonlinearity='leaky_relu')
 
     
     def forward(self, x):
@@ -107,11 +112,14 @@ class MLPEngine(nn.Module):
         else:
             out = torch.flatten(out, start_dim=1)
         # print(out.shape)
-        out = F.leaky_relu(self.ln1(self.l1(out)))    
+        out = F.leaky_relu(self.bn1(self.l1(out)))    
         out = self.dropout1(out)
-        out = F.leaky_relu(self.ln2(self.l2(out)))
-        # out = self.dropout2(out)
-        out = self.l3(out)
+        out = F.leaky_relu(self.bn2(self.l2(out)))
+        out = self.dropout2(out)
+        out = F.leaky_relu(self.bn3(self.l3(out)))
+        out = self.dropout2(out)
+        out = F.leaky_relu(self.bn4(self.l4(out)))
+        out = self.l5(out)
         return out
 
 def _get_score(save_path, input_fen):
