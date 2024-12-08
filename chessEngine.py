@@ -9,7 +9,6 @@ class ChessEncoder:
 
     def encode_fen(self, fen):
         fen = fen.split(' ')[:4]
-        # print(fen)
         encoding = []
         white_encoding = []
         black_encoding = []
@@ -40,11 +39,8 @@ class ChessEncoder:
             else: 
                 print('Something wierd here!')
                 raise 'error here 2'
-        # print(len(encoding), len(white_encoding), len(black_encoding))
-        # print(white_encoding)
         encoding.extend(white_encoding)
         encoding.extend(black_encoding)
-        # print(len(encoding))
         assert len(encoding) == 64*3
         
         # Whose move?
@@ -71,7 +67,6 @@ class ChessEncoder:
         encoding.append(tot_piece_value_black)
 
         assert(len(encoding) == 200)
-        # print(encoding)
         return encoding
 
     def encode_score(self, score):
