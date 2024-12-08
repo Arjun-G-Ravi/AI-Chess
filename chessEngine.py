@@ -83,7 +83,7 @@ class ChessEncoder:
         return float(score)
     
 class MLPEngine(nn.Module):
-    def __init__(self, embedding_dim=32):
+    def __init__(self, embedding_dim=64):
         super(MLPEngine, self).__init__()
         self.embd1 = nn.Embedding(200,  embedding_dim)
         self.l1 = nn.Linear(200*embedding_dim, 1024)
@@ -95,7 +95,7 @@ class MLPEngine(nn.Module):
         self.dropout2 = nn.Dropout(0.1)
         torch.nn.init.kaiming_uniform_(self.l1.weight)
         torch.nn.init.kaiming_uniform_(self.l2.weight)
-        torch.nn.init.xavier_uniform_(self.l3.weight)
+        torch.nn.init.kaiming_uniform_(self.l3.weight)
         torch.nn.init.kaiming_uniform_(self.embd1.weight)
 
     
