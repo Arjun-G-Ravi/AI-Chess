@@ -5,6 +5,7 @@ import pygame
 import sys
 import chess
 import time
+from chessEngine import get_best_move
 
 pygame.init()
 
@@ -12,6 +13,7 @@ WIDTH, HEIGHT = 800, 800  # Window size
 ROWS, COLS = 8, 8  # Chessboard grid
 SQUARE_SIZE = WIDTH // COLS
 WHITE, BLACK = (240, 217, 181), (181, 136, 99)  # Chessboard colors
+save_path = 'saves/bad_model.pt'
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chess Game")
@@ -99,19 +101,22 @@ def main():
                         if move in board.legal_moves or move_if_promotion in board.legal_moves:
                             if move in board.legal_moves:
                                 board.push(move)
+                                draw_board()
+                                draw_pieces()
+                                pygame.display.flip()
                             else: # This happens only if there is a promotion present, we auto-queen
                                 board.push(move_if_promotion)
                             
                             if not board.is_game_over():
                                 
                                 # Choosing the first move in the list to play as Computer
-                                computer_move = chess.Move.null()
-                                for possible_move in board.legal_moves:
-                                    computer_move = possible_move
-                                    break
+                                # computer_move = chess.Move.null()
+                                # for possible_move in board.legal_moves:
+                                #     computer_move = possible_move
+                                #     break
 
                                 # When AI will be ready, we go:
-                                # computer_move = get_best_move(board)
+                                computer_move = get_best_move(board, save_path)
                                 board.push(computer_move)
                                 if board.is_checkmate():
                                     draw_board()
