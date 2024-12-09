@@ -1,16 +1,7 @@
-import torch.nn as nn
+with open('data/test.db', 'rb') as f:
+    data = f.read().decode('utf-8')
 
+    
 
-model = nn.Sequential(
-    nn.Linear(764, 100),
-    nn.ReLU(),
-    nn.Linear(100, 50),
-    nn.ReLU(),
-    nn.Linear(50, 10),
-    nn.Sigmoid()
-)
-
-loss_fn = nn.CrossEntropyLoss()
-loss = loss_fn(output, label)
-
-model.
+print(len(data))
+print(data[:1000])
