@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from copy import deepcopy
-
+from print_color import print
 
 class ChessEncoder:
 
@@ -83,8 +83,9 @@ class ChessEncoder:
         return float(score)
     
 class MLPEngine(nn.Module):
-    def __init__(self, embedding_dim=64):
+    def __init__(self, embedding_dim=1, bs=1):
         super(MLPEngine, self).__init__()
+        self.bs = bs
         self.embd1 = nn.Embedding(200,  embedding_dim)
         self.l1 = nn.Linear(200*embedding_dim, 1024)
         self.bn1 = nn.BatchNorm1d(1024)
@@ -106,12 +107,13 @@ class MLPEngine(nn.Module):
     
     def forward(self, x):
         out = self.embd1(x)
-        # print(out.shape)
         if not self.training:
             out = torch.flatten(out)
         else:
             out = torch.flatten(out, start_dim=1)
+        out = out.view(self.bs,-1)
         # print(out.shape)
+        
         out = F.leaky_relu(self.bn1(self.l1(out)))    
         out = self.dropout1(out)
         out = F.leaky_relu(self.bn2(self.l2(out)))
