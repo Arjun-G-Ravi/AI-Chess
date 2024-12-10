@@ -81,7 +81,79 @@ class ChessEncoder:
         elif '-' in score:
             score = -float(score.replace('-',''))
         return float(score)
+
+
+class MLPEngine(nn.Module):
+    def __init__(self, embedding_dim=1, bs_train=1, bs_eval=1):
+        super(MLPEngine, self).__init__()
+        self.bs_train = bs_train
+        self.bs_eval = bs_eval
+        self.embd1 = nn.Embedding(200, embedding_dim)
+        
+        self.l1 = nn.Linear(200*embedding_dim, 1024)
+        self.bn1 = nn.BatchNorm1d(1024)
+        
+        self.l2 = nn.Linear(1024, 512)
+        self.bn2 = nn.BatchNorm1d(512)
+        
+        self.l3 = nn.Linear(512, 256)
+        self.bn3 = nn.BatchNorm1d(256)
+        
+        self.l4 = nn.Linear(256, 128)
+        self.bn4 = nn.BatchNorm1d(128)
+        
+        self.l5 = nn.Linear(128, 1)
+        
+        # Dropout layers
+        self.dropout1 = nn.Dropout(0.1)
+        self.dropout2 = nn.Dropout(0.1)
+        self.dropout3 = nn.Dropout(0.1)
+        
+        # Residual connection projection layers (if input and layer dimensions differ)
+        self.residual_proj = nn.Linear(200*embedding_dim, 128)
+
+        
+        # Weight initialization
+        torch.nn.init.kaiming_uniform_(self.l1.weight, nonlinearity='leaky_relu')
+        torch.nn.init.kaiming_uniform_(self.l2.weight, nonlinearity='leaky_relu')
+        torch.nn.init.kaiming_uniform_(self.l3.weight, nonlinearity='leaky_relu')
+        torch.nn.init.kaiming_uniform_(self.l4.weight, nonlinearity='leaky_relu')
+
+        torch.nn.init.kaiming_uniform_(self.embd1.weight, nonlinearity='leaky_relu')
+        torch.nn.init.kaiming_uniform_(self.residual_proj.weight, nonlinearity='leaky_relu')
+
     
+    def forward(self, x):
+        out = self.embd1(x)
+        if not self.training:
+            out = torch.flatten(out)
+        else:
+            out = torch.flatten(out, start_dim=1)
+        
+        if self.training:
+            out = out.view(self.bs_train, -1)
+        else:
+            out = out.view(self.bs_eval, -1)
+        
+        residual = self.residual_proj(out)
+        out = F.leaky_relu(self.bn1(self.l1(out)))    
+        out = self.dropout1(out)
+        out = F.leaky_relu(self.bn2(self.l2(out)))
+        
+        out = self.dropout2(out)
+        out = F.leaky_relu(self.bn3(self.l3(out)))
+        
+        out = self.dropout2(out)
+        out = F.leaky_relu(self.bn4(self.l4(out)))
+
+        out += residual
+        
+        out = self.l5(out)
+        return out
+
+
+'''
+# No residual here
 class MLPEngine(nn.Module):
     def __init__(self, embedding_dim=1, bs_train=1, bs_eval=1):
         super(MLPEngine, self).__init__()
@@ -127,7 +199,7 @@ class MLPEngine(nn.Module):
         out = F.leaky_relu(self.bn4(self.l4(out)))
         out = self.l5(out)
         return out
-
+'''
 def _get_score(save_path, input_fen):
     # encoding
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
