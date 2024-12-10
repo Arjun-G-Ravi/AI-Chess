@@ -83,9 +83,10 @@ class ChessEncoder:
         return float(score)
     
 class MLPEngine(nn.Module):
-    def __init__(self, embedding_dim=1, bs=1):
+    def __init__(self, embedding_dim=1, bs_train=1, bs_eval=1):
         super(MLPEngine, self).__init__()
-        self.bs = bs
+        self.bs_train = bs_train
+        self.bs_eval = bs_eval
         self.embd1 = nn.Embedding(200,  embedding_dim)
         self.l1 = nn.Linear(200*embedding_dim, 1024)
         self.bn1 = nn.BatchNorm1d(1024)
@@ -111,8 +112,10 @@ class MLPEngine(nn.Module):
             out = torch.flatten(out)
         else:
             out = torch.flatten(out, start_dim=1)
-        out = out.view(self.bs,-1)
+        if self.training: out = out.view(self.bs_train,-1)
+        else: out = out.view(self.bs_eval,-1)
         # print(out.shape)
+        # residual = out
         
         out = F.leaky_relu(self.bn1(self.l1(out)))    
         out = self.dropout1(out)
@@ -120,6 +123,7 @@ class MLPEngine(nn.Module):
         out = self.dropout2(out)
         out = F.leaky_relu(self.bn3(self.l3(out)))
         out = self.dropout2(out)
+        # out = out + residual
         out = F.leaky_relu(self.bn4(self.l4(out)))
         out = self.l5(out)
         return out
