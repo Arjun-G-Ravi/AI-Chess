@@ -13,7 +13,7 @@ WIDTH, HEIGHT = 800, 800  # Window size
 ROWS, COLS = 8, 8  # Chessboard grid
 SQUARE_SIZE = WIDTH // COLS
 WHITE, BLACK = (240, 217, 181), (181, 136, 99)  # Chessboard colors
-save_path = 'saves/bad_model.pt'
+save_path = 'saves/bad_model2.pt'
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chess Game")
