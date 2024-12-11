@@ -108,14 +108,13 @@ def main():
                                 board.push(move_if_promotion)
                             
                             if not board.is_game_over():
-                                
-                                # Choosing the first move in the list to play as Computer
+                                # Random AI
                                 # computer_move = chess.Move.null()
                                 # for possible_move in board.legal_moves:
                                 #     computer_move = possible_move
                                 #     break
 
-                                # When AI will be ready, we go:
+                                # Chess AI
                                 computer_move = get_best_move(board, save_path)
                                 board.push(computer_move)
                                 if board.is_checkmate():
@@ -126,7 +125,7 @@ def main():
                                     time.sleep(3)
                                     pygame.quit()
                                     sys.exit()
-                            else: # game is over
+                            else:
                                 # The game is somehow over
                                 if board.is_checkmate():
                                     draw_board()

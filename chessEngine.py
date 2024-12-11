@@ -105,12 +105,11 @@ class MLPEngine(nn.Module):
         self.l5 = nn.Linear(128, 1)
         
         # Dropout layers
-        self.dropout1 = nn.Dropout(0.1)
-        self.dropout2 = nn.Dropout(0.1)
-        self.dropout3 = nn.Dropout(0.1)
+        self.dropout1 = nn.Dropout(0.3)
+        self.dropout2 = nn.Dropout(0.3)
+        self.dropout3 = nn.Dropout(0.2)
         
         # Residual connection projection layers (if input and layer dimensions differ)
-        self.residual_proj = nn.Linear(200*embedding_dim, 128)
 
         
         # Weight initialization
@@ -120,7 +119,6 @@ class MLPEngine(nn.Module):
         torch.nn.init.kaiming_uniform_(self.l4.weight, nonlinearity='leaky_relu')
 
         torch.nn.init.kaiming_uniform_(self.embd1.weight, nonlinearity='leaky_relu')
-        torch.nn.init.kaiming_uniform_(self.residual_proj.weight, nonlinearity='leaky_relu')
 
     
     def forward(self, x):
@@ -134,8 +132,8 @@ class MLPEngine(nn.Module):
             out = out.view(self.bs_train, -1)
         else:
             out = out.view(self.bs_eval, -1)
+            
         
-        residual = self.residual_proj(out)
         out = F.leaky_relu(self.bn1(self.l1(out)))    
         out = self.dropout1(out)
         out = F.leaky_relu(self.bn2(self.l2(out)))
@@ -146,7 +144,6 @@ class MLPEngine(nn.Module):
         out = self.dropout2(out)
         out = F.leaky_relu(self.bn4(self.l4(out)))
 
-        out += residual
         
         out = self.l5(out)
         return out
