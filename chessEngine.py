@@ -158,8 +158,8 @@ def _get_score(save_path, input_fen):
     encoder_object = ChessEncoder()
     encoded_fen = torch.tensor(encoder_object.encode_fen(input_fen), dtype=torch.int32).to(device).view(200)
     bs=1
-    model = MLPEngine(embedding_dim=64).to(device)
-    model.load_state_dict(torch.load('saves/bad_model.pt', weights_only=True))
+    model = MLPEngine(embedding_dim=32).to(device)
+    model.load_state_dict(torch.load(save_path, weights_only=True))
     model.eval()
     y_pred = model(encoded_fen)
     return y_pred.item()

@@ -30,3 +30,6 @@ I've tried
 - AdamW has L2 regularisation inbuild, played around the parameter
 
 No luck in preventing overfitting
+
+# Playing game
+Clone the repo, Go to GUI, install all requirements and run the python file.

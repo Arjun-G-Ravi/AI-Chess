@@ -1,0 +1,8 @@
+torch
+pandas
+matplotlib
+wandb # optional
+tqdm # optional, just replace the one trange with range
+print_color # optional, remove color paramter from various debug
+pygame
+chess
