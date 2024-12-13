@@ -13,5 +13,8 @@ This is a AI based Chess Game
 The model overfits. 
 
 
-Model with Smooth L1 loss, l2 and dropout regularisation, AdamW, Trapezoidal scheduler, 32 embedding 
+Model with Smooth L1 loss, l2 and dropout regularisation, AdamW, Trapezoidal scheduler, 32 embedding, train-val = 1M, 10K, bs=10K, warmup=30
 ![alt text](image.png)
+
+Model with MSE loss, l2 and dropout regularisation, AdamW, Trapezoidal scheduler, 32 embedding, train-val = 1M, 10K, bs=10K, warmup=300
+![alt text](image-1.png)
