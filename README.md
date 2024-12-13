@@ -18,3 +18,15 @@ Model with Smooth L1 loss, l2 and dropout regularisation, AdamW, Trapezoidal sch
 
 Model with MSE loss, l2 and dropout regularisation, AdamW, Trapezoidal scheduler, 32 embedding, train-val = 1M, 10K, bs=10K, warmup=300
 ![alt text](image-1.png)
+
+I've tried
+
+- diff loss(mse, smooth l1)
+- diff scheduler(trapezoidal, cosing, exponential)
+- adjusted model size
+- dataset is very big and has large variety
+- changing embedding size
+- added dropout, tried with many values
+- AdamW has L2 regularisation inbuild, played around the parameter
+
+No luck in preventing overfitting
