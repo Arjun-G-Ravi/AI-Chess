@@ -109,15 +109,12 @@ class MLPEngine(nn.Module):
         self.dropout2 = nn.Dropout(0.3)
         self.dropout3 = nn.Dropout(0.2)
         
-        # Residual connection projection layers (if input and layer dimensions differ)
-
         
         # Weight initialization
         torch.nn.init.kaiming_uniform_(self.l1.weight, nonlinearity='leaky_relu')
         torch.nn.init.kaiming_uniform_(self.l2.weight, nonlinearity='leaky_relu')
         torch.nn.init.kaiming_uniform_(self.l3.weight, nonlinearity='leaky_relu')
         torch.nn.init.kaiming_uniform_(self.l4.weight, nonlinearity='leaky_relu')
-
         torch.nn.init.kaiming_uniform_(self.embd1.weight, nonlinearity='leaky_relu')
 
     
